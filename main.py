@@ -12,7 +12,15 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Firebase 초기화 (한 번만 실행)
+# 🔐 로그인 여부 확인
+if "user" not in st.session_state:
+    st.warning("로그인이 필요합니다. 좌측 메뉴에서 '로그인' 페이지로 이동해주세요.")
+    st.stop()
+
+user = st.session_state.user
+uid = user["uid"]  # pyrebase 로그인 시 localId가 uid 역할을 함
+
+# Firebase Admin SDK 초기화
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
@@ -26,20 +34,12 @@ if not firebase_admin._apps:
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# 로그인 확인
-if "user" not in st.session_state:
-    st.error("로그인이 필요합니다.")
-    st.stop()
-
-user = st.session_state.user
-uid = user["sub"]
-
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role":"system", "content":"너는 감정을 공감하고 따뜻하게 위로해주는 조력자야."},
-            {"role":"user",   "content":prompt}
+            {"role": "system", "content": "너는 감정을 공감하고 따뜻하게 위로해주는 조력자야."},
+            {"role": "user", "content": prompt}
         ]
     )
     return response.choices[0].message.content
