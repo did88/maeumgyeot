@@ -1,8 +1,9 @@
 import streamlit as st
 import datetime
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore
 from openai import OpenAI
+import json
 
 # ====== Streamlit 설정 ======
 st.set_page_config(page_title="🫂 마음곁", layout="centered")
@@ -12,9 +13,9 @@ st.markdown("""
 <hr style='margin-top: 0;'>
 """, unsafe_allow_html=True)
 
-# ====== Firebase 초기화 (json.loads 제거됨) ======
+# ====== Firebase 초기화 (Cloud secrets용 json.loads 사용) ======
 if not firebase_admin._apps:
-    cred = credentials.Certificate(st.secrets["firebase"])
+    cred = credentials.Certificate(json.loads(st.secrets["firebase"]))
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
