@@ -15,7 +15,7 @@ st.markdown("""
 
 # ====== Firebase 초기화 (Cloud secrets용 json.loads 사용) ======
 if not firebase_admin._apps:
-    cred = credentials.Certificate(json.loads(st.secrets["firebase"]))
+    cred = credentials.Certificate(st.secrets["firebase"])
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
