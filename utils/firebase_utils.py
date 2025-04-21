@@ -2,16 +2,14 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Firebase initialization with key cleanup
+# Firebase 초기화 (한 번만)
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
-        pk = firebase_config.get("private_key", "").strip()
-        pk = pk.replace("\n", "
-")
-        lines = [line.lstrip() for line in pk.splitlines()]
-        firebase_config["private_key"] = "
-".join(lines)
+        raw_key = firebase_config.get("private_key", "")
+        key = raw_key.replace("\\n", "\n").strip()
+        lines = [line.lstrip() for line in key.splitlines()]
+        firebase_config["private_key"] = "\n".join(lines)
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")

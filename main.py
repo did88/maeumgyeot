@@ -5,7 +5,6 @@ from firebase_admin import credentials, firestore
 from openai import OpenAI
 
 st.set_page_config(page_title="🫂 마음곁", layout="centered")
-
 st.markdown(
     "<h2 style='text-align:center; color:#4a4a4a;'>🫂 마음곁</h2>"
     "<p style='text-align:center; color:#888;'>당신의 마음, 곁에 머물다 💛</p>"
@@ -13,18 +12,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Firebase initialization with key cleanup
+# Firebase 초기화 (한 번만 실행)
 if not firebase_admin._apps:
     try:
+        # SecretsDict → 일반 dict
         firebase_config = dict(st.secrets["firebase"])
-        # Clean up private_key formatting
-        pk = firebase_config.get("private_key", "").strip()
-        pk = pk.replace("\n", "
-")
-        # Remove leading whitespace from each line
-        lines = [line.lstrip() for line in pk.splitlines()]
-        firebase_config["private_key"] = "
-".join(lines)
+        # private_key 내부의 '\n' 문자열을 실제 개행으로 바꿔주고, 앞뒤 공백 제거
+        raw_key = firebase_config.get("private_key", "")
+        key = raw_key.replace("\\n", "\n").strip()
+        # 각 줄 앞 공백 삭제
+        lines = [line.lstrip() for line in key.splitlines()]
+        firebase_config["private_key"] = "\n".join(lines)
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
@@ -34,6 +32,7 @@ if not firebase_admin._apps:
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# 로그인 확인
 if "user" not in st.session_state:
     st.error("로그인이 필요합니다.")
     st.stop()
@@ -45,8 +44,8 @@ def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role":"system","content":"너는 감정을 공감하고 따뜻하게 위로해주는 조력자야."},
-            {"role":"user","content":prompt}
+            {"role":"system", "content":"너는 감정을 공감하고 따뜻하게 위로해주는 조력자야."},
+            {"role":"user",   "content":prompt}
         ]
     )
     return response.choices[0].message.content
@@ -78,9 +77,9 @@ if st.button("💌 감정 보내기"):
             save_emotion(uid, text_input, gpt_response)
             st.markdown("#### 💬 GPT의 위로", unsafe_allow_html=True)
             st.markdown(
-                f"<div style='background-color:#f0f8ff; padding:15px; "
-                f"border-radius:10px; border:1px solid #dbeafe;'>{gpt_response}"
-                f"<br><br><span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>"
+                f"<div style='background-color:#f0f8ff; padding:15px; border-radius:10px; "
+                f"border:1px solid #dbeafe;'>{gpt_response}"
+                f"<br><br><span style='color:#666;'>💡 {comfort_phrases['unspecified']}</span>"
                 "</div>",
                 unsafe_allow_html=True
             )
@@ -89,6 +88,7 @@ if st.button("💌 감정 보내기"):
 
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
+
 docs = (
     db.collection("users")
       .document(uid)
@@ -98,7 +98,7 @@ docs = (
 )
 for doc in docs:
     d = doc.to_dict()
-    ts = d['timestamp'].strftime("%Y-%m-%d %H:%M")
+    ts = d["timestamp"].strftime("%Y-%m-%d %H:%M")
     st.markdown(
         f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; "
         f"border-radius:10px; background:#fff9;'>🗓️ <b>{ts}</b><br>"
