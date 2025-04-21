@@ -2,15 +2,12 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Firebase init with key cleanup
+# Firebase init with proper key cleanup
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
         pk = firebase_config.get("private_key", "").strip()
-        if "\\n" in pk:
-            pk = pk.replace("\\n", "\n")
-        if "\n" in pk:
-            pk = pk.replace("\n", "
+        pk = pk.replace("\n", "
 ")
         lines = [line.lstrip() for line in pk.splitlines()]
         firebase_config["private_key"] = "

@@ -13,19 +13,16 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Firebase init with key cleanup
+# Firebase init with proper key cleanup
 if not firebase_admin._apps:
     try:
-        # Convert SecretsDict to plain dict
         firebase_config = dict(st.secrets["firebase"])
-        # Clean up private_key formatting
+        # Strip and replace literal "
+" with actual newlines
         pk = firebase_config.get("private_key", "").strip()
-        if "\\n" in pk:
-            pk = pk.replace("\\n", "\n")
-        if "\n" in pk:
-            pk = pk.replace("\n", "\n").replace("\n", "
+        pk = pk.replace("\n", "
 ")
-        # Remove leading spaces on each line
+        # Remove leading whitespace from each line
         lines = [line.lstrip() for line in pk.splitlines()]
         firebase_config["private_key"] = "
 ".join(lines)
