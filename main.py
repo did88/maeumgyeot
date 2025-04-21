@@ -12,10 +12,18 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 로그인 여부 확인
+# 로그인 확인
 if "user" not in st.session_state:
     st.warning("로그인이 필요합니다. 좌측 메뉴에서 '로그인' 페이지로 이동해주세요.")
     st.stop()
+
+# ✅ 로그아웃 버튼 (사이드바 공통 삽입)
+with st.sidebar:
+    st.caption(f"👤 {st.session_state.user['email']}")
+    if st.button("🚪 로그아웃"):
+        del st.session_state.user
+        st.success("로그아웃 되었습니다.")
+        st.experimental_rerun()
 
 user = st.session_state.user
 uid = user["uid"]
