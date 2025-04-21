@@ -12,15 +12,15 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 🔐 로그인 여부 확인
+# 로그인 여부 확인
 if "user" not in st.session_state:
     st.warning("로그인이 필요합니다. 좌측 메뉴에서 '로그인' 페이지로 이동해주세요.")
     st.stop()
 
 user = st.session_state.user
-uid = user["uid"]  # pyrebase 로그인 시 localId가 uid 역할을 함
+uid = user["uid"]
 
-# Firebase Admin SDK 초기화
+# Firebase 초기화
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])

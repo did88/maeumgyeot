@@ -1,124 +1,55 @@
 import streamlit as st
-from firebase_admin import firestore
-import pandas as pd
-import datetime
-import pytz
-import matplotlib.pyplot as plt
-from utils.font_config import set_korean_font
-import io
-import xlsxwriter
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-# 한글 폰트 설정
-font_prop = set_korean_font()
+# 관리자 이메일 목록
+ADMIN_EMAILS = ["wsryang@gmail.com"]
 
-st.set_page_config(page_title="📊 관리자 대시보드", layout="wide")
-st.title("📊 관리자 대시보드")
+def is_admin():
+    return (
+        "user" in st.session_state
+        and st.session_state.user["email"] in ADMIN_EMAILS
+    )
 
-# 로그인 확인
-if "user" not in st.session_state:
-    st.error("로그인이 필요합니다.")
+if not is_admin():
+    st.error("⛔ 접근 권한이 없습니다. 관리자만 접근 가능합니다.")
     st.stop()
 
-user = st.session_state.user
-if user["email"] != "tester@example.com":
-    st.error("접근 권한이 없습니다.")
-    st.stop()
+st.title("📊 관리자 전용 페이지")
 
-# Firestore 연결
+# Firebase 연결
+if not firebase_admin._apps:
+    try:
+        firebase_config = dict(st.secrets["firebase"])
+        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+        cred = credentials.Certificate(firebase_config)
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        st.error(f"Firebase 인증 실패: {e}")
+        st.stop()
+
 db = firestore.client()
 
-# ===== 유저 감정 데이터 로드 =====
-st.subheader("📈 사용자 감정 기록 분석")
-docs = db.collection_group("emotions").stream()
+# 예시: 모든 사용자 감정 데이터 불러오기
+st.subheader("📋 모든 감정 기록")
 
-data = []
-for doc in docs:
-    d = doc.to_dict()
-    d["uid"] = doc.reference.parent.parent.id
-    data.append(d)
-
-if not data:
-    st.info("감정 데이터가 없습니다.")
-    st.stop()
-
-df = pd.DataFrame(data)
-df["timestamp"] = pd.to_datetime(df["timestamp"])
-
-# ===== 필터 =====
-st.sidebar.header("🔍 필터 옵션")
-uid_filter = st.sidebar.text_input("UID 검색")
-start_date = st.sidebar.date_input("시작 날짜", datetime.date.today() - datetime.timedelta(days=30))
-end_date = st.sidebar.date_input("종료 날짜", datetime.date.today())
-
-utc = pytz.UTC
-filtered_df = df[
-    (df["timestamp"] >= utc.localize(pd.to_datetime(start_date))) &
-    (df["timestamp"] <= utc.localize(pd.to_datetime(end_date) + pd.Timedelta(days=1)))
-]
-if uid_filter:
-    filtered_df = filtered_df[filtered_df["uid"].str.contains(uid_filter)]
-
-st.markdown(f"총 {len(filtered_df)}건의 감정 기록이 검색되었습니다.")
-
-# ===== 감정 코드 통계 =====
-if "emotion_code" in filtered_df.columns:
-    st.subheader("📊 감정 코드 통계")
-    emo_counts = filtered_df["emotion_code"].value_counts()
-    fig, ax = plt.subplots()
-    ax.pie(emo_counts, labels=emo_counts.index, autopct="%1.1f%%", startangle=90, textprops={"fontproperties": font_prop})
-    ax.axis("equal")
-    st.pyplot(fig)
-
-# ===== CSV 다운로드 =====
-st.subheader("⬇️ 감정기록 다운로드")
-csv = filtered_df.to_csv(index=False, encoding="utf-8-sig")
-st.download_button("📁 CSV 다운로드", csv, file_name="filtered_emotions.csv", mime="text/csv")
-
-# ===== Excel 다운로드 =====
-if not filtered_df.empty:
-    filtered_df["timestamp"] = filtered_df["timestamp"].dt.tz_localize(None)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        filtered_df.to_excel(writer, index=False, sheet_name="감정기록")
-    st.download_button("📗 Excel 다운로드", output.getvalue(), file_name="filtered_emotions.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-# ===== 감정 카드 리스트 출력 =====
-st.markdown("### 📝 감정 카드 리스트")
-for _, item in filtered_df.sort_values("timestamp", ascending=False).head(20).iterrows():
-    timestamp = item["timestamp"].strftime('%Y-%m-%d %H:%M')
-    st.markdown(f"""
-<div style="border:1px solid #444; padding:15px; margin-bottom:12px; border-radius:10px; background-color:#1e1e1e; color:#eee;">
-    <b>👤 UID:</b> {item['uid']}<br>
-    <b>🕒 시간:</b> {timestamp}<br>
-    <b>📝 감정:</b><br> {item['input_text']}<br>
-    <b>🤖 GPT:</b><br> {item['gpt_response']}<br>
-    <b>🏷️ 코드:</b> {item.get('emotion_code', '없음')}
-</div>
-""", unsafe_allow_html=True)
-
-# ===== 사용자 피드백 보기 =====
-st.markdown("---")
-st.subheader("📬 사용자 피드백")
-
-feedbacks = db.collection("feedbacks").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
-
-feedback_data = []
-for f in feedbacks:
-    d = f.to_dict()
-    d["timestamp"] = d["timestamp"].strftime('%Y-%m-%d %H:%M') if isinstance(d["timestamp"], datetime.datetime) else str(d["timestamp"])
-    feedback_data.append(d)
-
-if feedback_data:
-    feedback_df = pd.DataFrame(feedback_data)
-    st.dataframe(feedback_df)
-
-    csv_feedback = feedback_df.to_csv(index=False, encoding="utf-8-sig")
-    st.download_button("📁 피드백 CSV 다운로드", csv_feedback, file_name="feedbacks.csv", mime="text/csv")
-
-    output_fb = io.BytesIO()
-    feedback_df["timestamp"] = pd.to_datetime(feedback_df["timestamp"]).dt.tz_localize(None)
-    with pd.ExcelWriter(output_fb, engine="xlsxwriter") as writer:
-        feedback_df.to_excel(writer, index=False, sheet_name="피드백")
-    st.download_button("📗 피드백 Excel 다운로드", output_fb.getvalue(), file_name="feedbacks.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-else:
-    st.info("아직 수집된 피드백이 없습니다.")
+try:
+    users_ref = db.collection("users").list_documents()
+    for user_doc in users_ref:
+        uid = user_doc.id
+        emotions = (
+            db.collection("users")
+            .document(uid)
+            .collection("emotions")
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(3)
+            .stream()
+        )
+        st.markdown(f"#### 🧑 사용자: {uid}")
+        for doc in emotions:
+            data = doc.to_dict()
+            st.write(f"- 🕒 {data['timestamp'].strftime('%Y-%m-%d %H:%M')}")
+            st.write(f"  - 감정: {data['input_text']}")
+            st.write(f"  - GPT 응답: {data['gpt_response']}")
+except Exception as e:
+    st.error(f"데이터 불러오기 실패: {e}")
