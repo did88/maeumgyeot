@@ -1,31 +1,49 @@
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore, auth
-from google.oauth2 import id_token
-from google.auth.transport import requests
-import openai
 import datetime
-import json
+from firebase_admin import credentials, firestore, auth
+import firebase_admin
+from openai import OpenAI
 
-# ====== 설정 ======
-# Firebase 인증 키
+# ====== Streamlit 설정 ======
+st.set_page_config(page_title="🫂 마음곁", layout="centered")
+st.markdown("""
+<h2 style='text-align:center; color:#4a4a4a;'>🫂 마음곁</h2>
+<p style='text-align:center; color:#888; font-size: 1.1rem;'>당신의 마음, 곁에 머물다 💛</p>
+<hr style='margin-top: 0;'>
+""", unsafe_allow_html=True)
+
+# ====== Firebase 초기화 ======
 if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase_service_key.json")
+    cred = credentials.Certificate("firebase/firebase_service_key.json")
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-# OpenAI API 키
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+# ====== GPT 클라이언트 초기화 ======
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ====== 유틸 함수 ======
-def verify_token(token):
-    try:
-        info = id_token.verify_oauth2_token(token, requests.Request(), st.secrets["GOOGLE_CLIENT_ID"])
-        return info
-    except Exception as e:
-        return None
+# ====== 테스트용 세션 (배포 시 제거) ======
+if "user" not in st.session_state:
+    st.session_state.user = {
+        "sub": "test_user_001",
+        "email": "tester@example.com"
+    }
 
+user = st.session_state.user
+uid = user["sub"]
+
+# ====== GPT 응답 생성 함수 ======
+def generate_response(prompt):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "너는 감정을 공감하고 따뜻하게 위로해주는 조력자야."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message.content
+
+# ====== 감정 저장 함수 ======
 def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
     doc_ref = db.collection("users").document(uid).collection("emotions").document()
     doc_ref.set({
@@ -35,51 +53,50 @@ def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
         "timestamp": datetime.datetime.now()
     })
 
-def generate_response(prompt):
-    completion = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "너는 감정에 공감하고 따뜻하게 위로해주는 조력자야."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return completion.choices[0].message["content"]
+# ====== 위로 문구 모음 ======
+comfort_phrases = {
+    "joy": "😊 기쁨은 소중한 에너지예요. 오늘도 그 마음 오래 간직하길 바라요.",
+    "sadness": "😢 슬플 땐 충분히 울어도 괜찮아요. 당신의 마음을 안아줄게요.",
+    "anger": "😠 화가 날 땐 그 감정을 억누르지 말고 천천히 바라보세요.",
+    "anxiety": "😥 불안은 미래를 위한 마음의 준비일지도 몰라요. 지금 이 순간을 느껴봐요.",
+    "relief": "😌 안도의 순간, 나 자신에게 수고했다고 말해주세요.",
+    "unspecified": "💭 어떤 감정이든 소중해요. 표현해줘서 고마워요."
+}
 
-# ====== UI ======
-st.set_page_config(page_title="마음곁", layout="centered")
-st.title("🫂 마음곁: 감정 위로 챗봇")
+# ====== 본문 UI ======
+st.success(f"{user['email']}님, 오늘의 감정을 입력해보세요 ✨")
+text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
-if "user" not in st.session_state:
-    st.info("구글 계정으로 로그인해주세요.")
-    with st.form("login_form"):
-        token_input = st.text_input("Google ID Token (테스트용 입력)", type="password")
-        submitted = st.form_submit_button("로그인")
-        if submitted:
-            user_info = verify_token(token_input)
-            if user_info:
-                st.session_state.user = user_info
-                st.success(f"{user_info['email']}님 환영합니다!")
-            else:
-                st.error("유효하지 않은 토큰입니다.")
-else:
-    user = st.session_state.user
-    st.success(f"{user['email']}님, 오늘의 감정을 입력해보세요 ✨")
+if st.button("💌 감정 보내기"):
+    if text_input.strip():
+        with st.spinner("감정을 공감하고 있어요..."):
+            gpt_response = generate_response(text_input)
+            save_emotion(uid, text_input, gpt_response)
 
-    text_input = st.text_area("당신의 감정을 적어주세요")
-    if st.button("전송"):
-        if text_input.strip():
-            with st.spinner("감정을 공감하고 있어요..."):
-                gpt_response = generate_response(text_input)
-                save_emotion(user['sub'], text_input, gpt_response)
-                st.markdown("#### 💬 GPT의 위로")
-                st.write(gpt_response)
-        else:
-            st.warning("감정을 입력해주세요.")
+            st.markdown("#### 💬 GPT의 위로")
+            st.markdown(f"""
+            <div style='background-color:#f0f8ff; padding:15px 20px; border-radius:10px; border: 1px solid #dbeafe; color:#222;'>
+                {gpt_response}<br><br>
+                <span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.warning("감정을 입력해주세요.")
 
-    st.markdown("---")
-    st.markdown("### 📜 내 감정 히스토리")
-    docs = db.collection("users").document(user['sub']).collection("emotions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
-    for doc in docs:
-        data = doc.to_dict()
-        st.markdown(f"**날짜:** {data['timestamp'].strftime('%Y-%m-%d %H:%M')}\n\n**감정:** {data['input_text']}\n\n**GPT:** {data['gpt_response']}")
-        st.markdown("---")
+# ====== 감정 히스토리 출력 ======
+st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("### 📜 내 감정 히스토리")
+
+docs = db.collection("users").document(uid).collection("emotions")\
+    .order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
+
+for doc in docs:
+    data = doc.to_dict()
+    timestamp = data['timestamp'].strftime('%Y-%m-%d %H:%M') if isinstance(data['timestamp'], datetime.datetime) else str(data['timestamp'])
+    st.markdown(f"""
+    <div style="border: 1px solid #ddd; padding: 15px 20px; border-radius: 12px; background-color: #ffffffcc; margin-bottom: 20px;">
+        <p style="margin:0; color:#888;">🗓️ <b>{timestamp}</b></p>
+        <p style="margin:10px 0;"><b>📝 감정:</b><br>{data['input_text']}</p>
+        <p style="margin:10px 0;"><b>🤖 GPT의 위로:</b><br>{data['gpt_response']}</p>
+    </div>
+    """, unsafe_allow_html=True)
