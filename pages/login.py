@@ -6,6 +6,17 @@ FIREBASE_API_KEY = st.secrets["firebase_web"]["apiKey"]
 st.set_page_config(page_title="🔐 로그인", layout="centered")
 st.title("🔐 마음곁 - 로그인")
 
+# ✅ 관리자 전용 페이지 숨기기
+if "user" not in st.session_state:
+    st.markdown("""
+        <style>
+        section[data-testid="stSidebarNav"] ul li a[href*="Admin"],
+        section[data-testid="stSidebarNav"] ul li a[href*="admin"] {
+            display: none;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 # ✅ 이미 로그인된 경우 처리
 if "user" in st.session_state:
     st.success("이미 로그인되어 있습니다.")
@@ -28,8 +39,7 @@ with st.form("signup_form"):
     agree = st.checkbox("□ 본인은 아래 [이용약관 및 개인정보 수집·이용·분석 동의서]에 동의합니다.", key="terms_agree")
 
     with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
-        st.markdown("""
-        **제1조 (목적)**  
+        st.markdown("""**제1조 (목적)**  
 본 약관은 사용자가 본 심리 챗봇 서비스를 이용함에 있어 필요한 권리, 의무 및 책임사항을 규정함을 목적으로 하며, 본 서비스는 사용자의 감정, 사고, 행동, 신체상태에 관한 입력값을 바탕으로 GPT API 기반 위로 응답, 감정 태깅, 감정 추이 분석 등 심리 지원 기능을 제공합니다.
 
 **제2조 (정의)**  
@@ -86,8 +96,7 @@ with st.form("signup_form"):
 
 **제13조 (약관 변경)**  
 - 법령 변경 시 사전 고지 후 변경 가능  
-- 변경 사항은 공지 또는 이메일로 고지
-        """)
+- 변경 사항은 공지 또는 이메일로 고지""")
 
     signup_submit = st.form_submit_button("회원가입")
 
@@ -112,7 +121,7 @@ if login_submit:
                 "idToken": user["idToken"]
             }
             st.success("로그인 성공!")
-            st.rerun()  # ✅ switch_page("main") 대신 안전하게 재진입
+            st.rerun()
         except requests.exceptions.HTTPError:
             error_msg = res.json().get("error", {}).get("message", "로그인 실패")
             st.error(f"로그인 실패: {error_msg}")
