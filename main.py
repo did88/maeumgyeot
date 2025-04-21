@@ -12,23 +12,23 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 로그인 확인
+# ✅ 로그인 확인
 if "user" not in st.session_state:
     st.warning("로그인이 필요합니다. 좌측 메뉴에서 '로그인' 페이지로 이동해주세요.")
     st.stop()
 
-# ✅ 로그아웃 버튼 (사이드바 공통 삽입)
+# ✅ 로그아웃 버튼 (최신 Streamlit 버전 대응)
 with st.sidebar:
     st.caption(f"👤 {st.session_state.user['email']}")
     if st.button("🚪 로그아웃"):
         del st.session_state.user
         st.success("로그아웃 되었습니다.")
-        st.experimental_rerun()
+        st.rerun()  # ✅ 최신 Streamlit 방식 (이전: st.experimental_rerun)
 
 user = st.session_state.user
 uid = user["uid"]
 
-# Firebase 초기화
+# ✅ Firebase 초기화
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
@@ -42,6 +42,7 @@ if not firebase_admin._apps:
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# ✅ GPT 응답 함수
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -52,6 +53,7 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
+# ✅ 감정 저장 함수
 def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
@@ -60,6 +62,7 @@ def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
         "timestamp": datetime.datetime.now()
     })
 
+# ✅ 감정 코드별 위로 문구
 comfort_phrases = {
     "joy": "😊 기쁨은 소중한 에너지예요.",
     "sadness": "😢 슬플 땐 충분히 울어도 괜찮아요.",
@@ -69,6 +72,7 @@ comfort_phrases = {
     "unspecified": "💭 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
+# ✅ 감정 입력 영역
 st.success(f"{user['email']}님, 오늘의 감정을 입력해보세요 ✨")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
@@ -88,6 +92,7 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
+# ✅ 감정 히스토리 표시
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 
@@ -98,6 +103,7 @@ docs = (
       .order_by("timestamp", direction=firestore.Query.DESCENDING)
       .stream()
 )
+
 for doc in docs:
     d = doc.to_dict()
     ts = d["timestamp"].strftime("%Y-%m-%d %H:%M")
