@@ -1,15 +1,15 @@
 import streamlit as st
 import requests
 
-# 🔐 Firebase Web API 키 (secrets.toml에 저장되어 있어야 함)
 FIREBASE_API_KEY = st.secrets["firebase_web"]["apiKey"]
 
 st.set_page_config(page_title="🔐 로그인", layout="centered")
 st.title("🔐 마음곁 - 로그인")
 
-# ✅ 이미 로그인된 사용자 차단
+# ✅ 이미 로그인된 경우 처리
 if "user" in st.session_state:
     st.success("이미 로그인되어 있습니다.")
+    st.switch_page("Home")
     st.stop()
 
 # ✅ 로그인 폼
@@ -116,7 +116,7 @@ if login_submit:
                 "idToken": user["idToken"]
             }
             st.success("로그인 성공!")
-            st.rerun()
+            st.switch_page("Home")
         except requests.exceptions.HTTPError:
             error_msg = res.json().get("error", {}).get("message", "로그인 실패")
             st.error(f"로그인 실패: {error_msg}")
