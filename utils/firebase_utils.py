@@ -21,5 +21,11 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 def get_emotion_history(uid):
-    docs = db.collection("users")             .document(uid)             .collection("emotions")             .order_by("timestamp", direction=firestore.Query.DESCENDING)             .stream()
+    docs = (
+        db.collection("users")
+          .document(uid)
+          .collection("emotions")
+          .order_by("timestamp", direction=firestore.Query.DESCENDING)
+          .stream()
+    )
     return [doc.to_dict() for doc in docs]

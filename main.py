@@ -60,12 +60,12 @@ def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
     })
 
 comfort_phrases = {
-    "joy":"😊 기쁨은 소중한 에너지예요.",
-    "sadness":"😢 슬플 땐 충분히 울어도 괜찮아요.",
-    "anger":"😠 화가 날 땐 감정을 억누르지 마세요.",
-    "anxiety":"😥 불안은 마음의 준비일지도 몰라요.",
-    "relief":"😌 나 자신에게 수고했다고 말해주세요.",
-    "unspecified":"💭 어떤 감정이든 소중해요. 표현해줘서 고마워요."
+    "joy": "😊 기쁨은 소중한 에너지예요.",
+    "sadness": "😢 슬플 땐 충분히 울어도 괜찮아요.",
+    "anger": "😠 화가 날 땐 감정을 억누르지 마세요.",
+    "anxiety": "😥 불안은 마음의 준비일지도 몰라요.",
+    "relief": "😌 나 자신에게 수고했다고 말해주세요.",
+    "unspecified": "💭 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
 st.success(f"{user['email']}님, 오늘의 감정을 입력해보세요 ✨")
@@ -80,8 +80,7 @@ if st.button("💌 감정 보내기"):
             st.markdown(
                 f"<div style='background-color:#f0f8ff; padding:15px; "
                 f"border-radius:10px; border:1px solid #dbeafe;'>{gpt_response}"
-                "<br><br>"
-                f"<span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>"
+                f"<br><br><span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>"
                 "</div>",
                 unsafe_allow_html=True
             )
@@ -90,7 +89,13 @@ if st.button("💌 감정 보내기"):
 
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
-docs = db.collection("users")         .document(uid)         .collection("emotions")         .order_by("timestamp", direction=firestore.Query.DESCENDING)         .stream()
+docs = (
+    db.collection("users")
+      .document(uid)
+      .collection("emotions")
+      .order_by("timestamp", direction=firestore.Query.DESCENDING)
+      .stream()
+)
 for doc in docs:
     d = doc.to_dict()
     ts = d['timestamp'].strftime("%Y-%m-%d %H:%M")
