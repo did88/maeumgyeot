@@ -1,12 +1,13 @@
 import streamlit as st
 import requests
 
+# 🔐 Firebase Web API 키 (secrets.toml에 있어야 함)
 FIREBASE_API_KEY = st.secrets["firebase_web"]["apiKey"]
 
 st.set_page_config(page_title="🔐 로그인", layout="centered")
 st.title("🔐 마음곁 - 로그인")
 
-# ✅ 이미 로그인된 사용자 처리
+# ✅ 이미 로그인된 경우 처리
 if "user" in st.session_state:
     st.success("이미 로그인되어 있습니다.")
     st.stop()
@@ -18,7 +19,7 @@ with st.form("login_form"):
     password = st.text_input("비밀번호", type="password", key="login_pw", autocomplete="current-password")
     login_submit = st.form_submit_button("로그인")
 
-# ✅ 회원가입 폼 (선택적 입력)
+# ✅ 회원가입 폼
 with st.form("signup_form"):
     st.subheader("🆕 회원가입")
     email_signup = st.text_input("이메일", key="signup_email", autocomplete="email")
@@ -46,7 +47,7 @@ if login_submit:
                 "idToken": user["idToken"]
             }
             st.success("로그인 성공!")
-            st.experimental_rerun()
+            st.rerun()  # ✅ 최신 Streamlit 방식 (st.experimental_rerun → st.rerun)
         except requests.exceptions.HTTPError:
             error_msg = res.json().get("error", {}).get("message", "로그인 실패")
             st.error(f"로그인 실패: {error_msg}")
@@ -65,7 +66,7 @@ if signup_submit:
             }
             res = requests.post(url, json=payload)
             res.raise_for_status()
-            st.success("회원가입이 완료되었습니다. 이제 로그인해주세요.")
+            st.success("회원가입 완료! 이제 로그인해주세요.")
         except requests.exceptions.HTTPError:
             error_msg = res.json().get("error", {}).get("message", "회원가입 실패")
             st.error(f"회원가입 실패: {error_msg}")
