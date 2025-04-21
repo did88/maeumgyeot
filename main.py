@@ -4,7 +4,6 @@ import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
-import json
 
 st.set_page_config(page_title="🫂 마음곁", layout="centered")
 st.markdown("""
@@ -13,9 +12,9 @@ st.markdown("""
 <hr style='margin-top: 0;'>
 """, unsafe_allow_html=True)
 
-# Firebase init (string to dict)
+# Firebase init (Cloud 배포용: secrets.toml에서 dict로 불러옴)
 if not firebase_admin._apps:
-    cred = credentials.Certificate(json.loads(st.secrets["firebase"]))
+    cred = credentials.Certificate(st.secrets["firebase"])
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -73,7 +72,6 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
-# 감정 히스토리
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 docs = db.collection("users").document(uid).collection("emotions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
