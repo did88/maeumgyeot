@@ -12,7 +12,7 @@ if "user" not in st.session_state:
     st.stop()
 
 user = st.session_state.user
-uid = user["sub"]
+uid = user["uid"]  # ✅ 수정됨
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 db = firestore.client()
