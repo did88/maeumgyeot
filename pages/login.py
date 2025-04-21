@@ -19,11 +19,12 @@ with st.form("login_form"):
     password = st.text_input("비밀번호", type="password", key="login_pw", autocomplete="current-password")
     login_submit = st.form_submit_button("로그인")
 
-# ✅ 회원가입 폼
+# ✅ 회원가입 폼 (비밀번호 2회 입력 포함)
 with st.form("signup_form"):
     st.subheader("🆕 회원가입")
     email_signup = st.text_input("이메일", key="signup_email", autocomplete="email")
     password_signup = st.text_input("비밀번호", type="password", key="signup_pw", autocomplete="new-password")
+    password_confirm = st.text_input("비밀번호 확인", type="password", key="signup_confirm", autocomplete="new-password")
     signup_submit = st.form_submit_button("회원가입")
 
 # ✅ 로그인 처리
@@ -47,15 +48,17 @@ if login_submit:
                 "idToken": user["idToken"]
             }
             st.success("로그인 성공!")
-            st.rerun()  # ✅ 최신 Streamlit 방식 (st.experimental_rerun → st.rerun)
+            st.rerun()
         except requests.exceptions.HTTPError:
             error_msg = res.json().get("error", {}).get("message", "로그인 실패")
             st.error(f"로그인 실패: {error_msg}")
 
 # ✅ 회원가입 처리
 if signup_submit:
-    if not email_signup or not password_signup:
-        st.warning("이메일과 비밀번호를 입력해주세요.")
+    if not email_signup or not password_signup or not password_confirm:
+        st.warning("모든 항목을 입력해주세요.")
+    elif password_signup != password_confirm:
+        st.error("비밀번호가 일치하지 않습니다.")
     else:
         try:
             url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
