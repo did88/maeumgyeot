@@ -13,12 +13,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Firebase init with proper key cleanup
+# Firebase initialization with key cleanup
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
-        # Strip and replace literal "
-" with actual newlines
+        # Clean up private_key formatting
         pk = firebase_config.get("private_key", "").strip()
         pk = pk.replace("\n", "
 ")
@@ -79,7 +78,11 @@ if st.button("💌 감정 보내기"):
             save_emotion(uid, text_input, gpt_response)
             st.markdown("#### 💬 GPT의 위로", unsafe_allow_html=True)
             st.markdown(
-                f"<div style='background-color:#f0f8ff; padding:15px; border-radius:10px; border:1px solid #dbeafe;'>{gpt_response}<br><br><span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span></div>",
+                f"<div style='background-color:#f0f8ff; padding:15px; "
+                f"border-radius:10px; border:1px solid #dbeafe;'>{gpt_response}"
+                "<br><br>"
+                f"<span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>"
+                "</div>",
                 unsafe_allow_html=True
             )
     else:
@@ -87,11 +90,14 @@ if st.button("💌 감정 보내기"):
 
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
-docs = db.collection("users").document(uid).collection("emotions").order_by("timestamp", direction=firestore.Query.DESCENDING).stream()
+docs = db.collection("users")         .document(uid)         .collection("emotions")         .order_by("timestamp", direction=firestore.Query.DESCENDING)         .stream()
 for doc in docs:
     d = doc.to_dict()
     ts = d['timestamp'].strftime("%Y-%m-%d %H:%M")
     st.markdown(
-        f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:10px; background:#fff9;'>🗓️ <b>{ts}</b><br><b>📝 감정:</b> {d['input_text']}<br><b>🤖 GPT의 위로:</b> {d['gpt_response']}</div>",
+        f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; "
+        f"border-radius:10px; background:#fff9;'>🗓️ <b>{ts}</b><br>"
+        f"<b>📝 감정:</b> {d['input_text']}<br>"
+        f"<b>🤖 GPT의 위로:</b> {d['gpt_response']}</div>",
         unsafe_allow_html=True
     )

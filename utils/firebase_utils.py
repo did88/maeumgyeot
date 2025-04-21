@@ -2,7 +2,7 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Firebase init with proper key cleanup
+# Firebase initialization with key cleanup
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
@@ -21,11 +21,5 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 def get_emotion_history(uid):
-    docs = (
-        db.collection("users")
-          .document(uid)
-          .collection("emotions")
-          .order_by("timestamp", direction=firestore.Query.DESCENDING)
-          .stream()
-    )
+    docs = db.collection("users")             .document(uid)             .collection("emotions")             .order_by("timestamp", direction=firestore.Query.DESCENDING)             .stream()
     return [doc.to_dict() for doc in docs]
