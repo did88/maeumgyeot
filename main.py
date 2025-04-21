@@ -1,116 +1,96 @@
 import streamlit as st
-import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
-from openai import OpenAI
+import pandas as pd
 
-st.set_page_config(page_title="🫂 마음곁", layout="centered")
-st.markdown(
-    "<h2 style='text-align:center; color:#4a4a4a;'>🫂 마음곁</h2>"
-    "<p style='text-align:center; color:#888;'>당신의 마음, 곁에 머물다 💛</p>"
-    "<hr style='margin-top: 0;'>",
-    unsafe_allow_html=True
-)
+# 관리자 이메일
+ADMIN_EMAILS = ["wsryang@gmail.com"]
 
-# ✅ 로그인 확인
-if "user" not in st.session_state:
-    st.warning("로그인이 필요합니다. 좌측 메뉴에서 '로그인' 페이지로 이동해주세요.")
+def is_admin():
+    return (
+        "user" in st.session_state and
+        st.session_state.user["email"] in ADMIN_EMAILS
+    )
+
+# 로그인 및 권한 확인
+if "user" not in st.session_state or not is_admin():
+    st.error("⛔ 접근 권한이 없습니다. 관리자만 접근 가능합니다.")
     st.stop()
 
-# ✅ 로그아웃 버튼 (최신 Streamlit 버전 대응)
+# 로그아웃 버튼
 with st.sidebar:
-    st.caption(f"👤 {st.session_state.user['email']}")
+    st.caption(f"👑 관리자: {st.session_state.user['email']}")
     if st.button("🚪 로그아웃"):
         del st.session_state.user
-        st.success("로그아웃 되었습니다.")
-        st.rerun()  # ✅ 최신 Streamlit 방식 (이전: st.experimental_rerun)
+        st.rerun()
 
-user = st.session_state.user
-uid = user["uid"]
+st.title("📋 전체 사용자 활동 대시보드")
 
-# ✅ Firebase 초기화
+# Firebase 초기화
 if not firebase_admin._apps:
-    try:
-        firebase_config = dict(st.secrets["firebase"])
-        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
-        cred = credentials.Certificate(firebase_config)
-        firebase_admin.initialize_app(cred)
-    except Exception as e:
-        st.error(f"Firebase 인증 실패: {e}")
-        st.stop()
+    firebase_config = dict(st.secrets["firebase"])
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+    cred = credentials.Certificate(firebase_config)
+    firebase_admin.initialize_app(cred)
 
 db = firestore.client()
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ✅ GPT 응답 함수
-def generate_response(prompt):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "너는 감정을 공감하고 따뜻하게 위로해주는 조력자야."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return response.choices[0].message.content
+# 사용자 uid 목록 가져오기
+users = db.collection("users").list_documents()
 
-# ✅ 감정 저장 함수
-def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
-    db.collection("users").document(uid).collection("emotions").add({
-        "input_text": text_input,
-        "emotion_code": emotion_code,
-        "gpt_response": gpt_response,
-        "timestamp": datetime.datetime.now()
-    })
+# 통합 데이터 수집
+all_data = []
+for user_doc in users:
+    uid = user_doc.id
 
-# ✅ 감정 코드별 위로 문구
-comfort_phrases = {
-    "joy": "😊 기쁨은 소중한 에너지예요.",
-    "sadness": "😢 슬플 땐 충분히 울어도 괜찮아요.",
-    "anger": "😠 화가 날 땐 감정을 억누르지 마세요.",
-    "anxiety": "😥 불안은 마음의 준비일지도 몰라요.",
-    "relief": "😌 나 자신에게 수고했다고 말해주세요.",
-    "unspecified": "💭 어떤 감정이든 소중해요. 표현해줘서 고마워요."
-}
+    # 각 컬렉션별로 데이터 조회
+    for col in ["emotions", "dreams", "self_critic", "feedback"]:
+        try:
+            docs = db.collection("users").document(uid).collection(col).stream()
+            for d in docs:
+                entry = d.to_dict()
+                all_data.append({
+                    "uid": uid,
+                    "type": col,
+                    "input_text": entry.get("input_text") or entry.get("text", ""),
+                    "gpt_response": entry.get("gpt_response", ""),
+                    "timestamp": entry.get("timestamp")
+                })
+        except Exception as e:
+            st.warning(f"{uid}의 {col} 불러오기 실패: {e}")
 
-# ✅ 감정 입력 영역
-st.success(f"{user['email']}님, 오늘의 감정을 입력해보세요 ✨")
-text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
+# DataFrame으로 정리
+if all_data:
+    df = pd.DataFrame(all_data)
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df = df.sort_values(by="timestamp", ascending=False)
 
-if st.button("💌 감정 보내기"):
-    if text_input.strip():
-        with st.spinner("감정을 공감하고 있어요..."):
-            gpt_response = generate_response(text_input)
-            save_emotion(uid, text_input, gpt_response)
-            st.markdown("#### 💬 GPT의 위로", unsafe_allow_html=True)
-            st.markdown(
-                f"<div style='background-color:#f0f8ff; padding:15px; border-radius:10px; "
-                f"border:1px solid #dbeafe;'>{gpt_response}"
-                f"<br><br><span style='color:#666;'>💡 {comfort_phrases['unspecified']}</span>"
-                "</div>",
-                unsafe_allow_html=True
-            )
-    else:
-        st.warning("감정을 입력해주세요.")
+    # 🔍 필터 기능
+    st.markdown("### 🔎 활동 검색 및 필터")
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_type = st.selectbox("활동 유형 선택", ["전체"] + sorted(df["type"].unique().tolist()))
+    with col2:
+        selected_user = st.selectbox("사용자 UID 선택", ["전체"] + sorted(df["uid"].unique().tolist()))
 
-# ✅ 감정 히스토리 표시
-st.markdown("<hr>", unsafe_allow_html=True)
-st.markdown("### 📜 내 감정 히스토리")
+    filtered_df = df.copy()
+    if selected_type != "전체":
+        filtered_df = filtered_df[filtered_df["type"] == selected_type]
+    if selected_user != "전체":
+        filtered_df = filtered_df[filtered_df["uid"] == selected_user]
 
-docs = (
-    db.collection("users")
-      .document(uid)
-      .collection("emotions")
-      .order_by("timestamp", direction=firestore.Query.DESCENDING)
-      .stream()
-)
+    st.dataframe(filtered_df, use_container_width=True)
 
-for doc in docs:
-    d = doc.to_dict()
-    ts = d["timestamp"].strftime("%Y-%m-%d %H:%M")
-    st.markdown(
-        f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; "
-        f"border-radius:10px; background:#fff9;'>🗓️ <b>{ts}</b><br>"
-        f"<b>📝 감정:</b> {d['input_text']}<br>"
-        f"<b>🤖 GPT의 위로:</b> {d['gpt_response']}</div>",
-        unsafe_allow_html=True
-    )
+    # 📥 CSV 다운로드
+    csv = filtered_df.to_csv(index=False).encode("utf-8-sig")
+    st.download_button("📥 CSV로 다운로드", data=csv, file_name="all_user_activity.csv", mime="text/csv")
+
+    # 📊 통계 요약
+    st.subheader("📊 활동 유형별 문서 수")
+    st.bar_chart(filtered_df["type"].value_counts())
+
+    st.subheader("📅 날짜별 전체 입력 수")
+    daily = filtered_df.groupby(filtered_df["timestamp"].dt.date).size()
+    st.line_chart(daily)
+else:
+    st.info("아직 사용자 활동 데이터가 없습니다.")

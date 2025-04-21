@@ -1,0 +1,19 @@
+# .streamlit/config.toml
+[server]
+headless = true
+
+[theme]
+primaryColor = "#4a90e2"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#000000"
+
+[client]
+initialSidebarState = "expanded"
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+# Home.py를 기본 시작 파일로 설정
+homePage = "Home"
