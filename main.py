@@ -16,19 +16,19 @@ st.markdown(
 # Firebase init with key cleanup
 if not firebase_admin._apps:
     try:
+        # Convert SecretsDict to plain dict
         firebase_config = dict(st.secrets["firebase"])
-        # Strip surrounding whitespace/newlines
+        # Clean up private_key formatting
         pk = firebase_config.get("private_key", "").strip()
-        # Replace literal '
-' sequences with actual newlines
-        if "\n" in pk:
-            pk = pk.replace("\n", "\n")  # preserve Python string form
+        if "\\n" in pk:
             pk = pk.replace("\\n", "\n")
-            pk = pk.replace("\n", "
+        if "\n" in pk:
+            pk = pk.replace("\n", "\n").replace("\n", "
 ")
-        # Remove leading spaces for each line
+        # Remove leading spaces on each line
         lines = [line.lstrip() for line in pk.splitlines()]
-        firebase_config["private_key"] = "\n".join(lines)
+        firebase_config["private_key"] = "
+".join(lines)
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")

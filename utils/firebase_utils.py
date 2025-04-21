@@ -7,12 +7,14 @@ if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
         pk = firebase_config.get("private_key", "").strip()
-        if "\n" in pk:
-            pk = pk.replace("\n", "\n")
+        if "\\n" in pk:
             pk = pk.replace("\\n", "\n")
-            pk = pk.replace("\n", "\n")
+        if "\n" in pk:
+            pk = pk.replace("\n", "
+")
         lines = [line.lstrip() for line in pk.splitlines()]
-        firebase_config["private_key"] = "\n".join(lines)
+        firebase_config["private_key"] = "
+".join(lines)
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
