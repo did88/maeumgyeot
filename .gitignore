@@ -1,0 +1,17 @@
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Firebase 인증키
+firebase/firebase_service_key.json
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# 환경 설정
+.env
+.env.*
+
+# 기타 민감 파일
+*.key
+*.pem
