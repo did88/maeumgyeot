@@ -14,7 +14,7 @@ st.markdown("""
 <hr style='margin-top: 0;'>
 """, unsafe_allow_html=True)
 
-# ====== Firebase 초기화 ======
+# ====== Firebase 초기화 (JSON 문자열 로딩) ======
 if not firebase_admin._apps:
     cred = credentials.Certificate(json.loads(st.secrets["firebase"]))
     firebase_admin.initialize_app(cred)
@@ -43,7 +43,7 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# ====== 저장 함수 ======
+# ====== 감정 저장 ======
 def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
