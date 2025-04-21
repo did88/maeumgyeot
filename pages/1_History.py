@@ -17,7 +17,7 @@ if "user" not in st.session_state:
     st.stop()
 
 user = st.session_state.user
-uid = user['sub']
+uid = user["uid"]
 
 # ===== 감정 기록 히스토리 로딩 ======
 history = get_emotion_history(uid)
