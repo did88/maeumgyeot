@@ -5,7 +5,7 @@ from firebase_admin import credentials, firestore
 # Firebase init (shared across pages)
 if not firebase_admin._apps:
     try:
-        firebase_config = st.secrets["firebase"]
+        firebase_config = dict(st.secrets["firebase"])
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
