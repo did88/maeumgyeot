@@ -6,15 +6,12 @@ from firebase_admin import credentials, firestore
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
-        raw_key = firebase_config.get("private_key", "")
-        key = raw_key.replace("\\n", "\n").strip()
-        lines = [line.lstrip() for line in key.splitlines()]
-        firebase_config["private_key"] = "\n".join(lines)
+        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(firebase_config)
+        firebase_admin.initialize_app(cred)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
         st.stop()
-    firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 

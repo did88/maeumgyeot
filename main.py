@@ -15,19 +15,13 @@ st.markdown(
 # Firebase 초기화 (한 번만 실행)
 if not firebase_admin._apps:
     try:
-        # SecretsDict → 일반 dict
         firebase_config = dict(st.secrets["firebase"])
-        # private_key 내부의 '\n' 문자열을 실제 개행으로 바꿔주고, 앞뒤 공백 제거
-        raw_key = firebase_config.get("private_key", "")
-        key = raw_key.replace("\\n", "\n").strip()
-        # 각 줄 앞 공백 삭제
-        lines = [line.lstrip() for line in key.splitlines()]
-        firebase_config["private_key"] = "\n".join(lines)
+        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(firebase_config)
+        firebase_admin.initialize_app(cred)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
         st.stop()
-    firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
