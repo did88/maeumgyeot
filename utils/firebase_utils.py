@@ -2,12 +2,17 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# Firebase init (shared across pages)
+# Firebase init with key cleanup
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
-        if "\\n" in firebase_config.get("private_key", ""):
-            firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+        pk = firebase_config.get("private_key", "").strip()
+        if "\n" in pk:
+            pk = pk.replace("\n", "\n")
+            pk = pk.replace("\\n", "\n")
+            pk = pk.replace("\n", "\n")
+        lines = [line.lstrip() for line in pk.splitlines()]
+        firebase_config["private_key"] = "\n".join(lines)
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
