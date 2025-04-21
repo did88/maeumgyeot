@@ -1,4 +1,3 @@
-# .streamlit/config.toml
 [server]
 headless = true
 
@@ -13,7 +12,3 @@ initialSidebarState = "expanded"
 
 [browser]
 gatherUsageStats = false
-
-[runner]
-# Home.py를 기본 시작 파일로 설정
-homePage = "Home"
