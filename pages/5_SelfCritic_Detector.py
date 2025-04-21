@@ -7,18 +7,17 @@ import datetime
 st.set_page_config(page_title="🪞 자기비판 탐지", layout="centered")
 st.title("🪞 자기비판 탐지 챗봇")
 
-# 테스트용 세션 (배포 시 제거)
+# 로그인 확인
 if "user" not in st.session_state:
-    st.session_state.user = {
-        "sub": "test_user_001",
-        "email": "tester@example.com"
-    }
+    st.error("로그인이 필요합니다.")
+    st.stop()
 
 user = st.session_state.user
 uid = user["sub"]
 
 # OpenAI 클라이언트
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+db = firestore.client()
 
 # GPT 프롬프트 함수
 def analyze_self_criticism(text):
@@ -45,7 +44,6 @@ if st.button("🔍 분석하기"):
             result = analyze_self_criticism(user_input)
 
             # Firestore 저장
-            db = firestore.client()
             db.collection("users").document(uid).collection("self_critic").add({
                 "input_text": user_input,
                 "gpt_response": result,
@@ -56,9 +54,9 @@ if st.button("🔍 분석하기"):
             st.success("내면 분석이 완료되었습니다!")
             st.markdown("#### 💬 GPT의 분석과 탐색 질문")
             st.markdown(f"""
-            <div style='background-color:#f0f8ff; padding:15px 20px; border-radius:10px; border: 1px solid #dbeafe; color:#222;'>
-                {result}
-            </div>
-            """, unsafe_allow_html=True)
+<div style='background-color:#f0f8ff; padding:15px 20px; border-radius:10px; border: 1px solid #dbeafe; color:#222;'>
+{result}
+</div>
+""", unsafe_allow_html=True)
     else:
         st.warning("문장을 입력해주세요.")

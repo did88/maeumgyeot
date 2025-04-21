@@ -14,12 +14,10 @@ font_prop = set_korean_font()
 st.set_page_config(page_title="📊 관리자 대시보드", layout="wide")
 st.title("📊 관리자 대시보드")
 
-# 테스트용 세션 (배포 시 제거)
+# 로그인 확인
 if "user" not in st.session_state:
-    st.session_state.user = {
-        "sub": "test_user_001",
-        "email": "tester@example.com"
-    }
+    st.error("로그인이 필요합니다.")
+    st.stop()
 
 user = st.session_state.user
 if user["email"] != "tester@example.com":
@@ -73,37 +71,30 @@ if "emotion_code" in filtered_df.columns:
 
 # ===== CSV 다운로드 =====
 st.subheader("⬇️ 감정기록 다운로드")
-
 csv = filtered_df.to_csv(index=False, encoding="utf-8-sig")
 st.download_button("📁 CSV 다운로드", csv, file_name="filtered_emotions.csv", mime="text/csv")
 
 # ===== Excel 다운로드 =====
 if not filtered_df.empty:
-    filtered_df["timestamp"] = filtered_df["timestamp"].dt.tz_localize(None)  # 타임존 제거
+    filtered_df["timestamp"] = filtered_df["timestamp"].dt.tz_localize(None)
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         filtered_df.to_excel(writer, index=False, sheet_name="감정기록")
-
-    st.download_button(
-        label="📗 Excel 다운로드",
-        data=output.getvalue(),
-        file_name="filtered_emotions.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    st.download_button("📗 Excel 다운로드", output.getvalue(), file_name="filtered_emotions.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # ===== 감정 카드 리스트 출력 =====
 st.markdown("### 📝 감정 카드 리스트")
 for _, item in filtered_df.sort_values("timestamp", ascending=False).head(20).iterrows():
     timestamp = item["timestamp"].strftime('%Y-%m-%d %H:%M')
     st.markdown(f"""
-    <div style="border:1px solid #444; padding:15px; margin-bottom:12px; border-radius:10px; background-color:#1e1e1e; color:#eee;">
-        <b>👤 UID:</b> {item['uid']}<br>
-        <b>🕒 시간:</b> {timestamp}<br>
-        <b>📝 감정:</b><br> {item['input_text']}<br>
-        <b>🤖 GPT:</b><br> {item['gpt_response']}<br>
-        <b>🏷️ 코드:</b> {item.get('emotion_code', '없음')}
-    </div>
-    """, unsafe_allow_html=True)
+<div style="border:1px solid #444; padding:15px; margin-bottom:12px; border-radius:10px; background-color:#1e1e1e; color:#eee;">
+    <b>👤 UID:</b> {item['uid']}<br>
+    <b>🕒 시간:</b> {timestamp}<br>
+    <b>📝 감정:</b><br> {item['input_text']}<br>
+    <b>🤖 GPT:</b><br> {item['gpt_response']}<br>
+    <b>🏷️ 코드:</b> {item.get('emotion_code', '없음')}
+</div>
+""", unsafe_allow_html=True)
 
 # ===== 사용자 피드백 보기 =====
 st.markdown("---")
@@ -125,3 +116,9 @@ if feedback_data:
     st.download_button("📁 피드백 CSV 다운로드", csv_feedback, file_name="feedbacks.csv", mime="text/csv")
 
     output_fb = io.BytesIO()
+    feedback_df["timestamp"] = pd.to_datetime(feedback_df["timestamp"]).dt.tz_localize(None)
+    with pd.ExcelWriter(output_fb, engine="xlsxwriter") as writer:
+        feedback_df.to_excel(writer, index=False, sheet_name="피드백")
+    st.download_button("📗 피드백 Excel 다운로드", output_fb.getvalue(), file_name="feedbacks.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+else:
+    st.info("아직 수집된 피드백이 없습니다.")

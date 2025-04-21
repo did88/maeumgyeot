@@ -1,8 +1,9 @@
 import streamlit as st
 import datetime
-from firebase_admin import credentials, firestore, auth
 import firebase_admin
+from firebase_admin import credentials, firestore, auth
 from openai import OpenAI
+import json
 
 # ====== Streamlit 설정 ======
 st.set_page_config(page_title="🫂 마음곁", layout="centered")
@@ -12,9 +13,9 @@ st.markdown("""
 <hr style='margin-top: 0;'>
 """, unsafe_allow_html=True)
 
-# ====== Firebase 초기화 ======
+# ====== Firebase 초기화 (secrets.toml 기반) ======
 if not firebase_admin._apps:
-    cred = credentials.Certificate("firebase/firebase_service_key.json")
+    cred = credentials.Certificate(json.loads(st.secrets["firebase"]))
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -22,12 +23,10 @@ db = firestore.client()
 # ====== GPT 클라이언트 초기화 ======
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ====== 테스트용 세션 (배포 시 제거) ======
+# ====== 로그인 확인 ======
 if "user" not in st.session_state:
-    st.session_state.user = {
-        "sub": "test_user_001",
-        "email": "tester@example.com"
-    }
+    st.error("로그인이 필요합니다.")
+    st.stop()
 
 user = st.session_state.user
 uid = user["sub"]
@@ -75,11 +74,11 @@ if st.button("💌 감정 보내기"):
 
             st.markdown("#### 💬 GPT의 위로")
             st.markdown(f"""
-            <div style='background-color:#f0f8ff; padding:15px 20px; border-radius:10px; border: 1px solid #dbeafe; color:#222;'>
-                {gpt_response}<br><br>
-                <span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>
-            </div>
-            """, unsafe_allow_html=True)
+<div style='background-color:#f0f8ff; padding:15px 20px; border-radius:10px; border: 1px solid #dbeafe; color:#222;'>
+{gpt_response}<br><br>
+<span style='color:#666;'>💡 {comfort_phrases.get('unspecified')}</span>
+</div>
+""", unsafe_allow_html=True)
     else:
         st.warning("감정을 입력해주세요.")
 
@@ -94,9 +93,9 @@ for doc in docs:
     data = doc.to_dict()
     timestamp = data['timestamp'].strftime('%Y-%m-%d %H:%M') if isinstance(data['timestamp'], datetime.datetime) else str(data['timestamp'])
     st.markdown(f"""
-    <div style="border: 1px solid #ddd; padding: 15px 20px; border-radius: 12px; background-color: #ffffffcc; margin-bottom: 20px;">
-        <p style="margin:0; color:#888;">🗓️ <b>{timestamp}</b></p>
-        <p style="margin:10px 0;"><b>📝 감정:</b><br>{data['input_text']}</p>
-        <p style="margin:10px 0;"><b>🤖 GPT의 위로:</b><br>{data['gpt_response']}</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="border: 1px solid #ddd; padding: 15px 20px; border-radius: 12px; background-color: #ffffffcc; margin-bottom: 20px;">
+<p style="margin:0; color:#888;">🗓️ <b>{timestamp}</b></p>
+<p style="margin:10px 0;"><b>📝 감정:</b><br>{data['input_text']}</p>
+<p style="margin:10px 0;"><b>🤖 GPT의 위로:</b><br>{data['gpt_response']}</p>
+</div>
+""", unsafe_allow_html=True)
