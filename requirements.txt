@@ -1,4 +1,8 @@
-streamlit
+streamlit>=1.0
 firebase-admin
+google-cloud-firestore
 openai
-google-auth
+pandas
+matplotlib
+pytz
+xlsxwriter
