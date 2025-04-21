@@ -6,6 +6,8 @@ from firebase_admin import credentials, firestore
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
+        if "\\n" in firebase_config.get("private_key", ""):
+        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(firebase_config)
     except Exception as e:
         st.error(f"Firebase 인증 실패: {e}")
