@@ -98,3 +98,55 @@ try:
 
 except Exception as e:
     st.error(f"감정 통계 처리 중 오류 발생: {e}")
+
+st.markdown("---")
+
+# 📅 사용자별 감정 흐름 시각화
+st.subheader("📅 사용자별 감정 흐름 분석")
+
+try:
+    # 사용자 목록 불러오기
+    user_docs = db.collection("users").list_documents()
+    user_ids = [doc.id for doc in user_docs]
+
+    selected_user = st.selectbox("👤 사용자 선택", user_ids)
+
+    # 감정 코드 목록
+    all_emotion_codes = [
+        "기쁨", "슬픔", "분노", "불안", "외로움",
+        "사랑", "무감정/혼란", "지루함", "후회/자기비판"
+    ]
+    selected_code = st.selectbox("🏷️ 추적할 감정 코드 선택", all_emotion_codes)
+
+    # 해당 사용자 감정 데이터 불러오기
+    docs = (
+        db.collection("users")
+        .document(selected_user)
+        .collection("emotions")
+        .order_by("timestamp")
+        .stream()
+    )
+
+    # 감정 코드 빈도 계산
+    records = []
+    for doc in docs:
+        d = doc.to_dict()
+        timestamp = d["timestamp"]
+        date = timestamp.date() if timestamp else None
+        if not date:
+            continue
+        if selected_code in d.get("emotion_codes", []):
+            records.append(date)
+
+    if not records:
+        st.info(f"{selected_user}의 '{selected_code}' 기록이 없습니다.")
+    else:
+        df = pd.DataFrame(records, columns=["날짜"])
+        freq = df["날짜"].value_counts().sort_index()
+        freq_df = freq.reset_index()
+        freq_df.columns = ["날짜", "빈도"]
+
+        st.line_chart(freq_df.set_index("날짜"))
+
+except Exception as e:
+    st.error(f"감정 흐름 시각화 오류: {e}")
