@@ -1,8 +1,10 @@
+
 import streamlit as st
 import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
+from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
 # 관리자 이메일 리스트
 ADMIN_EMAILS = ["wsryang@gmail.com"]
@@ -22,7 +24,7 @@ uid = user["uid"]
 # 🔧 사이드바 메뉴
 st.sidebar.success(f"환영합니다, {email}님")
 st.sidebar.page_link("main.py", label="🏠 홈")
-st.sidebar.page_link("pages/6_MyPage.py", label="📈 내 감정 대시보드")  # ✅ 추가됨
+st.sidebar.page_link("pages/6_MyPage.py", label="📈 내 감정 대시보드")
 st.sidebar.page_link("pages/3_Feedback.py", label="💬 피드백")
 st.sidebar.page_link("pages/4_Dream_Analysis.py", label="🌙 꿈 해석")
 st.sidebar.page_link("pages/5_SelfCritic_Detector.py", label="🪞 자기비판")
@@ -40,7 +42,7 @@ if st.sidebar.button("🚪 로그아웃"):
 # Firebase 초기화
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
-    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
     cred = credentials.Certificate(firebase_config)
     firebase_admin.initialize_app(cred)
 
@@ -72,46 +74,9 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# 감정 코드 자동 태깅
+# 감정 코드 자동 태깅 (하이브리드 버전)
 def generate_emotion_codes(text):
-    prompt = f"""
-다음 감정 표현을 읽고, 아래의 감정 코드 중 가장 적절한 감정을 추출하세요.
-
-텍스트: "{text}"
-
-가능한 감정 코드 목록:
-- 분노
-- 슬픔
-- 불안
-- 외로움
-- 사랑
-- 기쁨
-- 무감정/혼란
-- 지루함
-- 후회/자기비판
-
-응답 형식:
-감정 코드: [감정1, 감정2, ...]
-오직 위 목록에 있는 단어만 사용할 것.
-"""
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "당신은 감정 분석 전문가입니다."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=100
-        )
-        content = response.choices[0].message.content
-        start = content.find("[")
-        end = content.find("]") + 1
-        codes = eval(content[start:end])
-        return codes
-    except Exception as e:
-        print(f"[ERROR] 감정 코드 추출 실패: {e}")
-        return ["unspecified"]
+    return get_emotion_codes_combined(text)
 
 # 감정 저장
 def save_emotion(uid, text_input, gpt_response, emotion_codes):
