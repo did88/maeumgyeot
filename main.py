@@ -19,9 +19,10 @@ user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
 
-# 사이드바 메뉴 구성
+# 🔧 사이드바 메뉴
 st.sidebar.success(f"환영합니다, {email}님")
 st.sidebar.page_link("main.py", label="🏠 홈")
+st.sidebar.page_link("pages/6_MyPage.py", label="📈 내 감정 대시보드")  # ✅ 추가됨
 st.sidebar.page_link("pages/3_Feedback.py", label="💬 피드백")
 st.sidebar.page_link("pages/4_Dream_Analysis.py", label="🌙 꿈 해석")
 st.sidebar.page_link("pages/5_SelfCritic_Detector.py", label="🪞 자기비판")
@@ -60,7 +61,7 @@ comfort_phrases = {
     "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
-# GPT 감정 위로 생성
+# GPT 위로 메시지 생성
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -71,7 +72,7 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# GPT 감정 코드 태깅
+# 감정 코드 자동 태깅
 def generate_emotion_codes(text):
     prompt = f"""
 다음 감정 표현을 읽고, 아래의 감정 코드 중 가장 적절한 감정을 추출하세요.
@@ -121,7 +122,7 @@ def save_emotion(uid, text_input, gpt_response, emotion_codes):
         "timestamp": datetime.datetime.now()
     })
 
-# 본문 영역
+# 📝 감정 입력 UI
 st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
@@ -145,16 +146,16 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
-# 감정 히스토리 출력
+# 📜 감정 히스토리 출력
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 
 docs = (
     db.collection("users")
-      .document(uid)
-      .collection("emotions")
-      .order_by("timestamp", direction=firestore.Query.DESCENDING)
-      .stream()
+    .document(uid)
+    .collection("emotions")
+    .order_by("timestamp", direction=firestore.Query.DESCENDING)
+    .stream()
 )
 
 for doc in docs:
