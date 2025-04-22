@@ -4,7 +4,7 @@ import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
-from utils.gpt_emotion_tagging_fixed import get_emotion_codes_combined
+from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
 # 관리자 이메일 리스트
 ADMIN_EMAILS = ["wsryang@gmail.com"]
