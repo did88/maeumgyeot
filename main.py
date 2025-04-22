@@ -4,7 +4,7 @@ import datetime
 import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
-from utils.gpt_emotion_tagging import get_emotion_codes_combined
+from utils.gpt_emotion_tagging_fixed import get_emotion_codes_combined
 
 # 관리자 이메일 리스트
 ADMIN_EMAILS = ["wsryang@gmail.com"]
@@ -74,7 +74,7 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# 감정 코드 자동 태깅 (하이브리드 버전)
+# 감정 코드 자동 태깅 (하이브리드 + 방어 로직 포함)
 def generate_emotion_codes(text):
     return get_emotion_codes_combined(text)
 

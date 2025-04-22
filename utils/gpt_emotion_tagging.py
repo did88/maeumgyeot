@@ -1,3 +1,4 @@
+
 import openai
 
 # 🔹 확장된 감정 키워드 사전
@@ -36,7 +37,7 @@ EMOTION_LEXICON_EXTENDED = {
     ]
 }
 
-# 🔹 감정 사전 기반 추출
+# 🔹 사전 기반 감정 추출
 def lexicon_based_emotion(text):
     for emotion, keywords in EMOTION_LEXICON_EXTENDED.items():
         if any(keyword in text for keyword in keywords):
@@ -79,13 +80,23 @@ def get_emotion_codes(text):
             max_tokens=100
         )
         content = response["choices"][0]["message"]["content"]
+        print("[DEBUG] GPT 응답 내용:", content)
+
         start = content.find("[")
         end = content.find("]") + 1
-        codes = eval(content[start:end])
-        return codes
+
+        try:
+            if start != -1 and end != -1:
+                codes = eval(content[start:end])
+                if isinstance(codes, list) and codes:
+                    return codes
+        except:
+            pass
+
     except Exception as e:
         print(f"[ERROR] GPT 감정 코드 추출 실패: {e}")
-        return []
+
+    return ["unspecified"]
 
 # 🔹 최종 감정 코드 추출 함수 (하이브리드)
 def get_emotion_codes_combined(text):
