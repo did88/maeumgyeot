@@ -36,7 +36,7 @@ with st.form("signup_form"):
     email_signup = st.text_input("이메일", key="signup_email", autocomplete="email")
     password_signup = st.text_input("비밀번호", type="password", key="signup_pw", autocomplete="new-password")
     password_confirm = st.text_input("비밀번호 확인", type="password", key="signup_confirm", autocomplete="new-password")
-    agree = st.checkbox("□ 본인은 아래 [이용약관 및 개인정보 수집·이용·분석 동의서]에 동의합니다.", key="terms_agree")
+    agree = st.checkbox("본인은 아래 [이용약관 및 개인정보 수집·이용·분석 동의서]에 동의합니다.", key="terms_agree")
 
     with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
         st.markdown("""**제1조 (목적)**  
