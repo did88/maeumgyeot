@@ -19,23 +19,19 @@ user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
 
-# 사이드바 사용자 표시
+# 사이드바 메뉴 구성
 st.sidebar.success(f"환영합니다, {email}님")
-
-# 일반 사용자 메뉴
 st.sidebar.page_link("main.py", label="🏠 홈")
 st.sidebar.page_link("pages/3_Feedback.py", label="💬 피드백")
 st.sidebar.page_link("pages/4_Dream_Analysis.py", label="🌙 꿈 해석")
 st.sidebar.page_link("pages/5_SelfCritic_Detector.py", label="🪞 자기비판")
 
-# 관리자 메뉴
 if email in ADMIN_EMAILS:
     st.sidebar.markdown("---")
     st.sidebar.markdown("**🔒 관리자 메뉴**")
     st.sidebar.page_link("pages/2_Admin.py", label="📊 감정 통계")
     st.sidebar.page_link("pages/2_Admin_AllData.py", label="📋 전체 활동 기록")
 
-# 로그아웃
 if st.sidebar.button("🚪 로그아웃"):
     del st.session_state.user
     st.rerun()
@@ -50,7 +46,21 @@ if not firebase_admin._apps:
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# GPT 응답 생성
+# 위로 문구 사전
+comfort_phrases = {
+    "기쁨": "😊 기쁨은 소중한 에너지예요.",
+    "슬픔": "😢 슬플 땐 충분히 울어도 괜찮아요.",
+    "분노": "😠 화가 날 땐 감정을 억누르지 마세요.",
+    "불안": "😥 불안은 마음의 준비일지도 몰라요.",
+    "외로움": "😔 외로움을 느끼는 건 당연해요. 함께 있어줄게요.",
+    "사랑": "😍 누군가를 사랑한다는 건 참 멋진 일이에요.",
+    "무감정/혼란": "😶 혼란스러울 땐 잠시 멈추고 자신을 바라봐요.",
+    "지루함": "🥱 지루함도 때론 필요한 감정이에요.",
+    "후회/자기비판": "💭 너무 자신을 몰아붙이지 말아요.",
+    "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
+}
+
+# GPT 감정 위로 생성
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -61,23 +71,55 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
+# GPT 감정 코드 태깅
+def generate_emotion_codes(text):
+    prompt = f"""
+다음 감정 표현을 읽고, 아래의 감정 코드 중 가장 적절한 감정을 추출하세요.
+
+텍스트: "{text}"
+
+가능한 감정 코드 목록:
+- 분노
+- 슬픔
+- 불안
+- 외로움
+- 사랑
+- 기쁨
+- 무감정/혼란
+- 지루함
+- 후회/자기비판
+
+응답 형식:
+감정 코드: [감정1, 감정2, ...]
+오직 위 목록에 있는 단어만 사용할 것.
+"""
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "당신은 감정 분석 전문가입니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=100
+        )
+        content = response.choices[0].message.content
+        start = content.find("[")
+        end = content.find("]") + 1
+        codes = eval(content[start:end])
+        return codes
+    except Exception as e:
+        print(f"[ERROR] 감정 코드 추출 실패: {e}")
+        return ["unspecified"]
+
 # 감정 저장
-def save_emotion(uid, text_input, gpt_response, emotion_code="unspecified"):
+def save_emotion(uid, text_input, gpt_response, emotion_codes):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
-        "emotion_code": emotion_code,
+        "emotion_codes": emotion_codes,
         "gpt_response": gpt_response,
         "timestamp": datetime.datetime.now()
     })
-
-comfort_phrases = {
-    "joy": "😊 기쁨은 소중한 에너지예요.",
-    "sadness": "😢 슬플 땐 충분히 울어도 괜찮아요.",
-    "anger": "😠 화가 날 땐 감정을 억누르지 마세요.",
-    "anxiety": "😥 불안은 마음의 준비일지도 몰라요.",
-    "relief": "😌 나 자신에게 수고했다고 말해주세요.",
-    "unspecified": "💭 어떤 감정이든 소중해요. 표현해줘서 고마워요."
-}
 
 # 본문 영역
 st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
@@ -85,16 +127,21 @@ text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
 if st.button("💌 감정 보내기"):
     if text_input.strip():
-        with st.spinner("감정을 공감하고 있어요..."):
+        with st.spinner("감정을 분석하고 있어요..."):
             gpt_response = generate_response(text_input)
-            save_emotion(uid, text_input, gpt_response)
+            emotion_codes = generate_emotion_codes(text_input)
+            save_emotion(uid, text_input, gpt_response, emotion_codes)
+
             st.markdown("#### 💬 GPT의 위로")
+            top_code = emotion_codes[0] if emotion_codes else "unspecified"
+            comfort = comfort_phrases.get(top_code, comfort_phrases["unspecified"])
+
             st.markdown(
                 f"<div style='background-color:#f0f8ff; padding:15px; border-radius:10px; border:1px solid #dbeafe;'>{gpt_response}"
-                f"<br><br><span style='color:#666;'>💡 {comfort_phrases['unspecified']}</span>"
-                "</div>",
+                f"<br><br><span style='color:#666;'>💡 {comfort}</span></div>",
                 unsafe_allow_html=True
             )
+            st.markdown(f"🔖 **감정 코드:** `{', '.join(emotion_codes)}`")
     else:
         st.warning("감정을 입력해주세요.")
 
@@ -113,9 +160,12 @@ docs = (
 for doc in docs:
     d = doc.to_dict()
     ts = d["timestamp"].strftime("%Y-%m-%d %H:%M")
+    codes = ", ".join(d.get("emotion_codes", ["unspecified"]))
     st.markdown(
-        f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:10px; background:#fff9;'>🗓️ <b>{ts}</b><br>"
+        f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:10px; background:#fff9;'>"
+        f"🗓️ <b>{ts}</b><br>"
         f"<b>📝 감정:</b> {d['input_text']}<br>"
+        f"<b>🏷️ 감정 코드:</b> {codes}<br>"
         f"<b>🤖 GPT의 위로:</b> {d['gpt_response']}</div>",
         unsafe_allow_html=True
     )
