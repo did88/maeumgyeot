@@ -1,40 +1,18 @@
 import streamlit as st
-
-print("✅ main.py 시작됨")
-st.write("📍 Streamlit 렌더링 시작됨")
-
-# ✅ 디버깅용 secrets 출력
-try:
-    st.write("📦 secrets 객체 내용:", st.secrets)
-except Exception as e:
-    st.error(f"❌ secrets 접근 실패: {e}")
-    st.stop()
-
-# ✅ Firebase 모듈 로드
-try:
-    import firebase_admin
-    from firebase_admin import credentials, firestore
-    st.success("✅ Firebase 모듈 로드됨")
-except Exception as e:
-    st.error(f"❌ Firebase 모듈 로딩 실패: {e}")
-    st.stop()
-
-# ✅ OpenAI 모듈 로드
-try:
-    from openai import OpenAI
-    st.success("✅ OpenAI 모듈 로드됨")
-except Exception as e:
-    st.error(f"❌ OpenAI 모듈 로딩 실패: {e}")
-    st.stop()
-
+import datetime
+import firebase_admin
+from firebase_admin import credentials, firestore
+from openai import OpenAI
 from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
+# 관리자 이메일
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
+# 페이지 설정
 st.set_page_config(page_title="🫂 마음곁 홈", layout="centered")
 st.title("🫂 마음곁")
 
-# ✅ 로그인 안 된 경우: 환영 메시지 출력
+# 로그인 안 된 경우: 환영 메시지
 if not st.session_state.get("user"):
     st.markdown("<h1 style='display: flex; align-items: center; gap: 10px;'>🤗 마음곁</h1>", unsafe_allow_html=True)
 
@@ -48,26 +26,22 @@ if not st.session_state.get("user"):
     """)
     st.stop()
 
-# ✅ 로그인 된 경우
+# 로그인 된 사용자 정보
 user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
 
-# ✅ Firebase 초기화
+# Firebase 초기화
 if not firebase_admin._apps:
-    try:
-        firebase_config = dict(st.secrets["firebase"])
-        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
-        cred = credentials.Certificate(firebase_config)
-        firebase_admin.initialize_app(cred)
-        st.success("✅ Firebase 초기화 완료")
-    except Exception as e:
-        st.error(f"❌ Firebase 초기화 실패: {e}")
-        st.stop()
+    firebase_config = dict(st.secrets["firebase"])
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+    cred = credentials.Certificate(firebase_config)
+    firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# 감정 코드별 위로 문구
 comfort_phrases = {
     "기쁨": "😊 기쁨은 소중한 에너지예요.",
     "슬픔": "😢 슬플 땐 충분히 울어도 괜찮아요.",
@@ -81,6 +55,7 @@ comfort_phrases = {
     "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
+# GPT 응답 생성
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -91,9 +66,11 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
+# 감정 코드 태깅
 def generate_emotion_codes(text):
     return get_emotion_codes_combined(text)
 
+# Firestore에 감정 저장
 def save_emotion(uid, text_input, gpt_response, emotion_codes):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
@@ -102,7 +79,7 @@ def save_emotion(uid, text_input, gpt_response, emotion_codes):
         "timestamp": datetime.datetime.now()
     })
 
-# ✅ 감정 입력
+# 감정 입력 UI
 st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
@@ -130,7 +107,7 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
-# ✅ 감정 히스토리
+# 감정 히스토리 출력
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 
