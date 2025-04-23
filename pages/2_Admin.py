@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
 # ✅ NanumGothic 사용자 폰트 설정
-font_path = "assets/fonts/NanumGothic.ttf"
+font_path = "./assets/fonts/NanumGothic.ttf"
 font_name = fm.FontProperties(fname=font_path).get_name()
 plt.rcParams["font.family"] = font_name
 plt.rcParams["axes.unicode_minus"] = False
