@@ -1,4 +1,3 @@
-
 import streamlit as st
 import datetime
 import firebase_admin
@@ -42,7 +41,7 @@ if st.sidebar.button("🚪 로그아웃"):
 # Firebase 초기화
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
-    firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\\n")
     cred = credentials.Certificate(firebase_config)
     firebase_admin.initialize_app(cred)
 
@@ -108,6 +107,7 @@ if st.button("💌 감정 보내기"):
                 unsafe_allow_html=True
             )
             st.markdown(f"🔖 **감정 코드:** `{', '.join(emotion_codes)}`")
+            st.text(f"🧪 DEBUG 감정 코드: {emotion_codes}")
     else:
         st.warning("감정을 입력해주세요.")
 
