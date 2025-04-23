@@ -5,6 +5,9 @@ from firebase_admin import credentials, firestore
 from openai import OpenAI
 from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
+print("✅ main.py 시작됨")  # 로그 출력용
+st.write("📍 Streamlit 렌더링 시작됨")
+
 # 관리자 이메일
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
