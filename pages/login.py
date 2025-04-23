@@ -48,7 +48,7 @@ with st.form("signup_form"):
 
     with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
         st.markdown("""**제1조 (목적)**  
-... (← 생략 가능, 기존 약관 전문 동일하게 유지) ...
+... (← 기존 약관 전문 그대로 유지) ...
 **제13조 (약관 변경)**  
 - 법령 변경 시 사전 고지 후 변경 가능  
 - 변경 사항은 공지 또는 이메일로 고지""")
@@ -96,28 +96,49 @@ if signup_submit:
             error_msg = res.json().get("error", {}).get("message", "회원가입 실패")
             st.error(f"회원가입 실패: {error_msg}")
 
-# ✅ 구글 로그인 버튼
+# ✅ 구글 로그인 버튼 (개선된 방식)
 st.subheader("🔑 또는 Google로 로그인")
 components.html(f"""
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <div id="g_id_onload"
-       data-client_id="{st.secrets['google']['client_id']}"
-       data-context="signin"
-       data-ux_mode="popup"
-       data-callback="handleCredentialResponse"
-       data-auto_prompt="false">
-  </div>
-  <div class="g_id_signin" data-type="standard"></div>
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      .g_id_signin {{
+        display: flex;
+        justify-content: center;
+        margin-top: 12px;
+      }}
+    </style>
+  </head>
+  <body>
+    <div id="g_id_onload"
+         data-client_id="{st.secrets['google']['client_id']}"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard"
+         data-size="large"
+         data-theme="outline"
+         data-text="sign_in_with"
+         data-shape="rect"
+         data-logo_alignment="left">
+    </div>
 
-  <script>
-    function handleCredentialResponse(response) {{
-      const msg = {{token: response.credential}};
-      window.parent.postMessage(msg, "*");
-    }}
-  </script>
-""", height=250)
+    <script>
+      function handleCredentialResponse(response) {{
+        const msg = {{ token: response.credential }};
+        window.parent.postMessage(msg, "*");
+      }}
+    </script>
+  </body>
+  </html>
+""", height=300)
 
-# ✅ 토큰 수신 스크립트 (Streamlit → JS 연동)
+# ✅ 토큰 수신 처리 (JS → Streamlit)
 st.markdown("""
 <script>
   window.addEventListener("message", (event) => {
@@ -129,7 +150,7 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-# ✅ 구글 로그인 ID 토큰 처리
+# ✅ ID 토큰 수신 후 Firebase 인증 검증
 params = st.experimental_get_query_params()
 if "id_token" in params:
     try:
