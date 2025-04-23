@@ -30,8 +30,7 @@ if email in ADMIN_EMAILS:
     st.sidebar.markdown("---")
     st.sidebar.markdown("**🔒 관리자 메뉴**")
     st.sidebar.page_link("pages/2_Admin.py", label="📊 감정 통계")
-    st.sidebar.page_link("pages/2_Admin_AllData.py", label="📋 전체 활동 기록")
-
+    
 if st.sidebar.button("🚪 로그아웃"):
     del st.session_state.user
     st.rerun()
