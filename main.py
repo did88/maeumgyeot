@@ -12,6 +12,8 @@ ADMIN_EMAILS = ["wsryang@gmail.com"]
 st.set_page_config(page_title="🫂 마음곁 홈", layout="centered")
 st.title("🫂 마음곁")
 
+st.write("🔐 세션 상태:", st.session_state)
+
 # ✅ 로그인 안 된 경우: 환영 메시지 먼저 출력
 if "user" not in st.session_state:
     st.markdown("<h1 style='display: flex; align-items: center; gap: 10px;'>🤗 마음곁</h1>", unsafe_allow_html=True)
