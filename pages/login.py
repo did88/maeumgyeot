@@ -48,7 +48,7 @@ with st.form("signup_form"):
     with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
         components.html("""
         <div style="border:1px solid #ccc; padding:10px; height:200px; overflow-y:scroll;" id="terms_box"
-            onscroll="checkScroll()" >
+             onscroll="checkScroll()">
             <p>
             <strong>제1조 (목적)</strong><br> 이 약관은 사용자와 마음곁 간의 권리, 의무, 책임사항을 규정함.<br><br>
             <strong>제2조 (개인정보 수집항목)</strong><br> 이메일, 로그인 기록 등.<br><br>
@@ -157,7 +157,7 @@ components.html(f"""
   </html>
 """, height=300)
 
-# ✅ 토큰 수신 처리
+# ✅ JS 메시지 → Streamlit 전달
 st.markdown("""
 <script>
   window.addEventListener("message", (event) => {
@@ -169,7 +169,8 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-params = st.experimental_get_query_params()
+# ✅ Google 로그인 토큰 처리
+params = st.query_params  # 최신 API 사용
 if "id_token" in params:
     try:
         decoded = auth.verify_id_token(params["id_token"][0])
