@@ -1,19 +1,10 @@
-
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-import os
 
-# ✅ NanumGothic을 matplotlib에 직접 등록하여 깨짐 방지
-font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "NanumGothic.ttf"))
-font_prop = fm.FontProperties(fname=font_path)
-fm.fontManager.addfont(font_path)
-plt.rc('font', family=font_prop.get_name())
-plt.rcParams["axes.unicode_minus"] = False
-
+# 관리자 이메일 목록
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
 def is_admin():
@@ -28,10 +19,40 @@ if not is_admin():
 
 st.title("📊 관리자 전용 페이지")
 
+# 🔀 탭 선택
+tab = st.radio("🔎 보고 싶은 항목을 선택하세요", ["감정 통계", "사용자별 감정 흐름", "사용자 피드백"])
+
+if tab == "사용자 피드백":
+    st.subheader("📬 사용자 피드백 모아보기")
+
+    users = db.collection("users").list_documents()
+    for user_doc in users:
+        uid = user_doc.id
+        feedbacks = (
+            db.collection("users")
+            .document(uid)
+            .collection("feedback")
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .stream()
+        )
+
+        feedback_list = list(feedbacks)
+        if feedback_list:
+            st.markdown(f"### 🧑 사용자: `{uid}`")
+            for doc in feedback_list:
+                data = doc.to_dict()
+                timestamp = data.get("timestamp")
+                text = data.get("text", "내용 없음")
+                st.markdown(f"- 🕒 `{timestamp.strftime('%Y-%m-%d %H:%M')}`<br>✍️ {text}", unsafe_allow_html=True)
+            st.markdown("---")
+    st.stop()
+
+
+# Firebase 연결
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
-        firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
+        firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
         cred = credentials.Certificate(firebase_config)
         firebase_admin.initialize_app(cred)
     except Exception as e:
@@ -40,6 +61,7 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
+# 📋 모든 사용자 감정 기록
 st.subheader("📋 모든 감정 기록")
 
 try:
@@ -66,6 +88,7 @@ except Exception as e:
 
 st.markdown("---")
 
+# 📊 감정 코드 통계 시각화
 st.subheader("📈 감정 코드 통계 시각화")
 
 try:
@@ -83,6 +106,7 @@ try:
     else:
         df = pd.DataFrame(list(emotion_counts.items()), columns=["감정코드", "횟수"]).sort_values(by="횟수", ascending=False)
 
+        # Bar Chart
         st.subheader("📊 감정 코드 막대 그래프")
         fig, ax = plt.subplots()
         ax.bar(df["감정코드"], df["횟수"], color="skyblue")
@@ -90,12 +114,14 @@ try:
         plt.tight_layout()
         st.pyplot(fig)
 
+        # Pie Chart
         st.subheader("🥧 감정 코드 파이 차트")
         fig2, ax2 = plt.subplots()
         ax2.pie(df["횟수"], labels=df["감정코드"], autopct="%1.1f%%", startangle=140)
         ax2.axis("equal")
         st.pyplot(fig2)
 
+        # CSV 다운로드
         csv = df.to_csv(index=False).encode("utf-8-sig")
         st.download_button("📥 통계 CSV 다운로드", data=csv, file_name="emotion_code_stats.csv", mime="text/csv")
 
@@ -104,20 +130,24 @@ except Exception as e:
 
 st.markdown("---")
 
+# 📅 사용자별 감정 흐름 시각화
 st.subheader("📅 사용자별 감정 흐름 분석")
 
 try:
+    # 사용자 목록 불러오기
     user_docs = db.collection("users").list_documents()
     user_ids = [doc.id for doc in user_docs]
 
     selected_user = st.selectbox("👤 사용자 선택", user_ids)
 
+    # 감정 코드 목록
     all_emotion_codes = [
         "기쁨", "슬픔", "분노", "불안", "외로움",
         "사랑", "무감정/혼란", "지루함", "후회/자기비판"
     ]
     selected_code = st.selectbox("🏷️ 추적할 감정 코드 선택", all_emotion_codes)
 
+    # 해당 사용자 감정 데이터 불러오기
     docs = (
         db.collection("users")
         .document(selected_user)
@@ -126,6 +156,7 @@ try:
         .stream()
     )
 
+    # 감정 코드 빈도 계산
     records = []
     for doc in docs:
         d = doc.to_dict()
@@ -143,6 +174,7 @@ try:
         freq = df["날짜"].value_counts().sort_index()
         freq_df = freq.reset_index()
         freq_df.columns = ["날짜", "빈도"]
+
         st.line_chart(freq_df.set_index("날짜"))
 
 except Exception as e:
