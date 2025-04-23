@@ -5,23 +5,13 @@ from firebase_admin import credentials, firestore
 from openai import OpenAI
 from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
-# ✅ 페이지 설정 (사이드바 표시용 제목)
+# 관리자 이메일
+ADMIN_EMAILS = ["wsryang@gmail.com"]
+
+# ✅ 페이지 설정 (사이드바에 '홈'으로 표시)
 st.set_page_config(page_title="홈", layout="centered")
 
-# ✅ 사이드바 메뉴 수동 구성
-with st.sidebar:
-    st.markdown("## 📋 메뉴")
-    st.page_link("main.py", label="🏠 홈")
-    st.page_link("pages/History.py", label="📜 감정 히스토리")
-    st.page_link("pages/Dream Analysis.py", label="🌙 꿈 해석")
-    st.page_link("pages/SelfCritic Detector.py", label="⚠️ 자기비판 탐지기")
-    st.page_link("pages/Feedback.py", label="💬 사용자 피드백")
-    st.page_link("pages/MyPage.py", label="🙋‍♂️ 내 정보")
-    st.page_link("pages/login.py", label="🔑 로그인")
-    st.page_link("pages/privacy.py", label="📜 개인정보 처리방침")
-    st.page_link("pages/terms.py", label="📄 이용약관")
-
-# ✅ 로그인 안 된 경우: 환영 메시지
+# 로그인 안 된 경우: 환영 메시지
 if not st.session_state.get("user"):
     st.markdown("<h1 style='display: flex; align-items: center; gap: 10px;'>🤗 마음곁</h1>", unsafe_allow_html=True)
 
@@ -35,12 +25,12 @@ if not st.session_state.get("user"):
     """)
     st.stop()
 
-# ✅ 로그인 된 사용자 정보
+# 로그인 된 사용자 정보
 user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
 
-# ✅ Firebase 초기화
+# Firebase 초기화
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
     firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
@@ -50,7 +40,7 @@ if not firebase_admin._apps:
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ✅ 감정 코드별 위로 문구
+# 감정 코드별 위로 문구
 comfort_phrases = {
     "기쁨": "😊 기쁨은 소중한 에너지예요.",
     "슬픔": "😢 슬플 땐 충분히 울어도 괜찮아요.",
@@ -64,7 +54,7 @@ comfort_phrases = {
     "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
-# ✅ GPT 응답 생성
+# GPT 응답 생성
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -75,11 +65,11 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# ✅ 감정 코드 태깅
+# 감정 코드 태깅
 def generate_emotion_codes(text):
     return get_emotion_codes_combined(text)
 
-# ✅ Firestore에 감정 저장
+# Firestore에 감정 저장
 def save_emotion(uid, text_input, gpt_response, emotion_codes):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
@@ -88,7 +78,7 @@ def save_emotion(uid, text_input, gpt_response, emotion_codes):
         "timestamp": datetime.datetime.now()
     })
 
-# ✅ 감정 입력 UI
+# 감정 입력 UI
 st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
@@ -116,7 +106,7 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
-# ✅ 감정 히스토리 출력
+# 감정 히스토리 출력
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 
