@@ -1,5 +1,5 @@
 
-import openai
+from openai import OpenAI
 import streamlit as st
 
 # 🔹 확장된 감정 키워드 사전
@@ -21,6 +21,8 @@ EMOTION_LEXICON_EXTENDED = {
     "후회/자기비판": ["후회", "자책", "내탓", "실수", "바보같", "창피", "민망", "못났어", "왜 그랬을까",
                     "내가 문제야", "부끄러워", "쓸모없", "소심", "자존감 떨어져", "무가치", "망했어"]
 }
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def lexicon_based_emotion(text):
     st.text(f"[DEBUG] 사전 감정 키워드 분석 중: {text}")
@@ -54,8 +56,9 @@ def get_emotion_codes(text):
 응답 형식:
 감정 코드: [감정1, 감정2, ...]
 """
+
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "당신은 감정 분석 전문가입니다."},
@@ -64,9 +67,7 @@ def get_emotion_codes(text):
             temperature=0.3,
             max_tokens=100
         )
-        content = response["choices"][0]["message"]["content"]
-
-        # 💬 화면에 GPT 응답 원문 출력
+        content = response.choices[0].message.content
         st.subheader("📄 GPT 응답 원문 (디버그)")
         st.code(content, language="text")
 
