@@ -1,6 +1,7 @@
 
 from openai import OpenAI
 import streamlit as st
+import ast
 
 # 🔹 확장된 감정 키워드 사전
 EMOTION_LEXICON_EXTENDED = {
@@ -56,7 +57,6 @@ def get_emotion_codes(text):
 응답 형식:
 감정 코드: [감정1, 감정2, ...]
 """
-
     try:
         response = client.chat.completions.create(
             model="gpt-4",
@@ -76,12 +76,12 @@ def get_emotion_codes(text):
 
         try:
             if start != -1 and end != -1:
-                codes = eval(content[start:end])
+                codes = ast.literal_eval(content[start:end])
                 st.text(f"[파싱된 감정 코드] {codes}")
                 if isinstance(codes, list) and codes:
                     return codes
         except Exception as e:
-            st.text(f"[eval 파싱 실패] {e}")
+            st.text(f"[literal_eval 파싱 실패] {e}")
 
     except Exception as e:
         st.text(f"[GPT 요청 실패] {e}")
