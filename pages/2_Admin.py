@@ -6,9 +6,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
-# ✅ Streamlit Cloud용 한글 폰트 설정
-plt.rcParams['font.family'] = 'DejaVu Sans'
-plt.rcParams['axes.unicode_minus'] = False
+# ✅ NanumGothic 사용자 폰트 설정
+font_path = "assets/fonts/NanumGothic.ttf"
+font_name = fm.FontProperties(fname=font_path).get_name()
+plt.rcParams["font.family"] = font_name
+plt.rcParams["axes.unicode_minus"] = False
 
 # 관리자 이메일 목록
 ADMIN_EMAILS = ["wsryang@gmail.com"]
@@ -25,7 +27,6 @@ if not is_admin():
 
 st.title("📊 관리자 전용 페이지")
 
-# Firebase 연결
 if not firebase_admin._apps:
     try:
         firebase_config = dict(st.secrets["firebase"])
@@ -38,7 +39,6 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# 📋 모든 사용자 감정 기록
 st.subheader("📋 모든 감정 기록")
 
 try:
@@ -65,7 +65,6 @@ except Exception as e:
 
 st.markdown("---")
 
-# 📊 감정 코드 통계 시각화
 st.subheader("📈 감정 코드 통계 시각화")
 
 try:
@@ -104,7 +103,6 @@ except Exception as e:
 
 st.markdown("---")
 
-# 📅 사용자별 감정 흐름 시각화
 st.subheader("📅 사용자별 감정 흐름 분석")
 
 try:
