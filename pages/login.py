@@ -44,15 +44,33 @@ with st.form("signup_form"):
     email_signup = st.text_input("이메일", key="signup_email", autocomplete="email")
     password_signup = st.text_input("비밀번호", type="password", key="signup_pw", autocomplete="new-password")
     password_confirm = st.text_input("비밀번호 확인", type="password", key="signup_confirm", autocomplete="new-password")
-    agree = st.checkbox("본인은 아래 [이용약관 및 개인정보 수집·이용·분석 동의서]에 동의합니다.", key="terms_agree")
 
     with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
-        st.markdown("""**제1조 (목적)**  
-... (← 기존 약관 전문 그대로 유지) ...
-**제13조 (약관 변경)**  
-- 법령 변경 시 사전 고지 후 변경 가능  
-- 변경 사항은 공지 또는 이메일로 고지""")
+        components.html("""
+        <div style="border:1px solid #ccc; padding:10px; height:200px; overflow-y:scroll;" id="terms_box"
+            onscroll="checkScroll()" >
+            <p>
+            <strong>제1조 (목적)</strong><br> ...<br><br>
+            <strong>제13조 (약관 변경)</strong><br>
+            - 법령 변경 시 사전 고지 후 변경 가능<br>
+            - 변경 사항은 공지 또는 이메일로 고지
+            </p>
+        </div>
+        <br>
+        <input type="checkbox" id="agree_checkbox" disabled> 위 내용을 모두 읽고 동의합니다
+        <script>
+        function checkScroll() {
+          var box = document.getElementById("terms_box");
+          var checkbox = document.getElementById("agree_checkbox");
+          if (box.scrollTop + box.clientHeight >= box.scrollHeight - 5) {
+            checkbox.disabled = false;
+          }
+        }
+        </script>
+        """, height=300)
 
+    # 실제 사용자 체크 확인용
+    agree = st.checkbox("⬆️ 위 체크박스를 체크한 경우 여기를 클릭해 동의하세요", key="terms_agree_manual")
     signup_submit = st.form_submit_button("회원가입")
 
 # ✅ 이메일 로그인 처리
@@ -84,7 +102,7 @@ if signup_submit:
     elif password_signup != password_confirm:
         st.error("비밀번호가 일치하지 않습니다.")
     elif not agree:
-        st.error("약관 및 개인정보 수집·이용·분석 동의에 체크해주세요.")
+        st.error("약관을 끝까지 읽고 체크박스를 눌러야 가입이 가능합니다.")
     else:
         try:
             url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
@@ -96,7 +114,7 @@ if signup_submit:
             error_msg = res.json().get("error", {}).get("message", "회원가입 실패")
             st.error(f"회원가입 실패: {error_msg}")
 
-# ✅ 구글 로그인 버튼 (개선된 방식)
+# ✅ 구글 로그인 버튼
 st.subheader("🔑 또는 Google로 로그인")
 components.html(f"""
   <!DOCTYPE html>
@@ -138,7 +156,7 @@ components.html(f"""
   </html>
 """, height=300)
 
-# ✅ 토큰 수신 처리 (JS → Streamlit)
+# ✅ ID 토큰 수신 후 Firebase 인증 검증
 st.markdown("""
 <script>
   window.addEventListener("message", (event) => {
@@ -150,7 +168,6 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-# ✅ ID 토큰 수신 후 Firebase 인증 검증
 params = st.experimental_get_query_params()
 if "id_token" in params:
     try:
