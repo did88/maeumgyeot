@@ -8,9 +8,8 @@ from utils.gpt_emotion_tagging import get_emotion_codes_combined
 # 관리자 이메일
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
-# 페이지 설정
+# ✅ 페이지 설정 (영문 or 기본 이름)
 st.set_page_config(page_title="🫂 마음곁 홈", layout="centered")
-# st.title("🫂 마음곁")
 
 # 로그인 안 된 경우: 환영 메시지
 if not st.session_state.get("user"):
@@ -55,7 +54,6 @@ comfort_phrases = {
     "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
-# GPT 응답 생성
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -66,11 +64,9 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# 감정 코드 태깅
 def generate_emotion_codes(text):
     return get_emotion_codes_combined(text)
 
-# Firestore에 감정 저장
 def save_emotion(uid, text_input, gpt_response, emotion_codes):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
@@ -79,7 +75,6 @@ def save_emotion(uid, text_input, gpt_response, emotion_codes):
         "timestamp": datetime.datetime.now()
     })
 
-# 감정 입력 UI
 st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
@@ -107,7 +102,6 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
-# 감정 히스토리 출력
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 
