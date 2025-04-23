@@ -50,27 +50,28 @@ with st.form("signup_form"):
         <div style="border:1px solid #ccc; padding:10px; height:200px; overflow-y:scroll;" id="terms_box"
             onscroll="checkScroll()" >
             <p>
-            <strong>제1조 (목적)</strong><br> ...<br><br>
+            <strong>제1조 (목적)</strong><br> 이 약관은 사용자와 마음곁 간의 권리, 의무, 책임사항을 규정함.<br><br>
+            <strong>제2조 (개인정보 수집항목)</strong><br> 이메일, 로그인 기록 등.<br><br>
+            <strong>제3조 (수집 목적)</strong><br> 감정 기록 및 통계 제공, 상담 기능 향상 등.<br><br>
             <strong>제13조 (약관 변경)</strong><br>
             - 법령 변경 시 사전 고지 후 변경 가능<br>
             - 변경 사항은 공지 또는 이메일로 고지
             </p>
         </div>
-        <br>
-        <input type="checkbox" id="agree_checkbox" disabled> 위 내용을 모두 읽고 동의합니다
+        <p id="scroll_hint" style="color:red;">※ 약관을 끝까지 읽어야 아래 체크박스를 눌러야 합니다.</p>
         <script>
         function checkScroll() {
           var box = document.getElementById("terms_box");
-          var checkbox = document.getElementById("agree_checkbox");
+          var hint = document.getElementById("scroll_hint");
           if (box.scrollTop + box.clientHeight >= box.scrollHeight - 5) {
-            checkbox.disabled = false;
+            hint.style.color = 'green';
+            hint.innerText = '✅ 약관을 끝까지 읽었습니다. 아래 체크박스를 눌러주세요.';
           }
         }
         </script>
         """, height=300)
 
-    # 실제 사용자 체크 확인용
-    agree = st.checkbox("⬆️ 위 체크박스를 체크한 경우 여기를 클릭해 동의하세요", key="terms_agree_manual")
+    agree = st.checkbox("⬆️ 약관 내용을 모두 읽고 동의합니다.", key="terms_agree_manual")
     signup_submit = st.form_submit_button("회원가입")
 
 # ✅ 이메일 로그인 처리
@@ -102,7 +103,7 @@ if signup_submit:
     elif password_signup != password_confirm:
         st.error("비밀번호가 일치하지 않습니다.")
     elif not agree:
-        st.error("약관을 끝까지 읽고 체크박스를 눌러야 가입이 가능합니다.")
+        st.error("약관을 끝까지 읽고, 체크박스를 눌러야 가입할 수 있습니다.")
     else:
         try:
             url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_API_KEY}"
@@ -156,7 +157,7 @@ components.html(f"""
   </html>
 """, height=300)
 
-# ✅ ID 토큰 수신 후 Firebase 인증 검증
+# ✅ 토큰 수신 처리
 st.markdown("""
 <script>
   window.addEventListener("message", (event) => {
