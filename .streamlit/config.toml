@@ -12,3 +12,6 @@ initialSidebarState = "expanded"
 
 [browser]
 gatherUsageStats = false
+
+[ui]
+hideSidebarNav = true
