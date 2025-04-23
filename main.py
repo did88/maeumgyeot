@@ -10,7 +10,7 @@ ADMIN_EMAILS = ["wsryang@gmail.com"]
 
 # 페이지 설정
 st.set_page_config(page_title="🫂 마음곁 홈", layout="centered")
-st.title("🫂 마음곁")
+# st.title("🫂 마음곁")
 
 # 로그인 안 된 경우: 환영 메시지
 if not st.session_state.get("user"):
