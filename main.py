@@ -19,21 +19,7 @@ user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
 
-st.sidebar.success(f"환영합니다, {email}님")
-st.sidebar.page_link("main.py", label="🏠 홈")
-st.sidebar.page_link("pages/6_MyPage.py", label="📈 내 감정 대시보드")
-st.sidebar.page_link("pages/3_Feedback.py", label="💬 피드백")
-st.sidebar.page_link("pages/4_Dream_Analysis.py", label="🌙 꿈 해석")
-st.sidebar.page_link("pages/5_SelfCritic_Detector.py", label="🪞 자기비판")
 
-if email in ADMIN_EMAILS:
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("**🔒 관리자 메뉴**")
-    st.sidebar.page_link("pages/2_Admin.py", label="📊 감정 통계")
-    
-if st.sidebar.button("🚪 로그아웃"):
-    del st.session_state.user
-    st.rerun()
 
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
