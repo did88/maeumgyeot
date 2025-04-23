@@ -1,4 +1,6 @@
+
 import openai
+import streamlit as st
 
 # 🔹 확장된 감정 키워드 사전
 EMOTION_LEXICON_EXTENDED = {
@@ -21,12 +23,12 @@ EMOTION_LEXICON_EXTENDED = {
 }
 
 def lexicon_based_emotion(text):
-    print("[DEBUG] 사전 감정 키워드 분석 중:", text)
+    st.text(f"[DEBUG] 사전 감정 키워드 분석 중: {text}")
     for emotion, keywords in EMOTION_LEXICON_EXTENDED.items():
         if any(keyword in text for keyword in keywords):
-            print(f"[HIT] 감정 '{emotion}' 키워드 감지됨")
+            st.text(f"[HIT] 감정 '{emotion}' 키워드 감지됨")
             return [emotion]
-    print("[MISS] 사전 키워드에서 감정 감지 실패")
+    st.text("[MISS] 사전 키워드에서 감정 감지 실패")
     return []
 
 def get_emotion_codes(text):
@@ -52,7 +54,6 @@ def get_emotion_codes(text):
 응답 형식:
 감정 코드: [감정1, 감정2, ...]
 """
-
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -64,7 +65,7 @@ def get_emotion_codes(text):
             max_tokens=100
         )
         content = response["choices"][0]["message"]["content"]
-        print("[DEBUG] GPT 응답 원문:", content)
+        st.code(f"[GPT 응답 원문]\n{content}", language="text")
 
         start = content.find("[")
         end = content.find("]") + 1
@@ -72,16 +73,16 @@ def get_emotion_codes(text):
         try:
             if start != -1 and end != -1:
                 codes = eval(content[start:end])
-                print("[DEBUG] GPT 추출 감정 코드:", codes)
+                st.text(f"[파싱된 감정 코드] {codes}")
                 if isinstance(codes, list) and codes:
                     return codes
         except Exception as e:
-            print("[ERROR] eval 파싱 실패:", e)
+            st.text(f"[eval 파싱 실패] {e}")
 
     except Exception as e:
-        print("[ERROR] GPT 감정 코드 추출 실패:", e)
+        st.text(f"[GPT 요청 실패] {e}")
 
-    print("[FALLBACK] 감정 분석 실패 → unspecified 반환")
+    st.text("[FALLBACK] 감정 분석 실패 → unspecified 반환")
     return ["unspecified"]
 
 def get_emotion_codes_combined(text):
