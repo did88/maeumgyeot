@@ -3,6 +3,8 @@ from openai import OpenAI
 import streamlit as st
 import ast
 
+VALID_CODES = ["분노", "슬픔", "불안", "외로움", "사랑", "기쁨", "지루함", "후회/자기비판"]
+
 EMOTION_LEXICON_EXTENDED = {
     "분노": ["화나", "짜증", "열받", "미치겠", "빡쳐", "성질", "분노", "환장", "짜증나", "울컥", "짜증남",
              "죽여버리고", "도저히 못 참겠", "개빡쳐", "돌겠다", "부들부들", "손이 부들", "때려치우고 싶어"],
@@ -44,8 +46,7 @@ def get_emotion_codes(text):
 
 ❗ 응답 형식은 반드시 아래와 같은 JSON 스타일의 문자열 리스트로만 작성하세요:
 감정 코드: ["분노"] 또는 감정 코드: ["분노", "외로움"]
-※ 절대 따옴표 없이 감정 이름만 나열하지 마세요.
-※ 정확히 위 형식을 따라야 합니다.
+※ 감정 단어는 반드시 위 목록에 있는 것 중 하나여야 하며, 임의의 감정 이름은 사용하지 마세요.
 """
 
     try:
@@ -68,8 +69,9 @@ def get_emotion_codes(text):
         try:
             if start != -1 and end != -1:
                 codes = ast.literal_eval(content[start:end])
+                codes = [code for code in codes if code in VALID_CODES]  # ✅ 유효 감정만 필터링
                 st.text(f"[파싱된 감정 코드] {codes}")
-                if isinstance(codes, list) and codes:
+                if codes:
                     return codes
         except Exception as e:
             st.text(f"[literal_eval 파싱 실패] {e}")
