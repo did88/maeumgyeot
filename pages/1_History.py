@@ -1,3 +1,4 @@
+
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -5,9 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import os
-
-# ✅ 페이지 설정: 사이드바에는 "감정 히스토리"로 표시됨
-st.set_page_config(page_title="감정 히스토리", layout="centered")
 
 # ✅ 폰트 설정 (NanumGothic)
 font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "NanumGothic.ttf"))
@@ -30,7 +28,6 @@ EMOTION_TRANSLATE = {
     "unspecified": None  # 삭제 대상
 }
 
-# ✅ Firebase 초기화
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
     firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
@@ -39,10 +36,11 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
+st.set_page_config(page_title="📜 감정 히스토리", layout="centered")
 st.title("📜 내 감정 히스토리")
 st.subheader("📈 감정 흐름 라인 차트")
 
-# ✅ 현재 로그인한 사용자 확인
+# 현재 로그인한 사용자
 if "user" not in st.session_state:
     st.warning("로그인이 필요합니다. 좌측 메뉴에서 로그인해주세요.")
     st.stop()
