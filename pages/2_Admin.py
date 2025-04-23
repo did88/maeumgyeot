@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import os
 
-# ✅ 절대 경로 기반 폰트 설정
+# ✅ NanumGothic을 matplotlib에 직접 등록하여 깨짐 방지
 font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "NanumGothic.ttf"))
-font_name = fm.FontProperties(fname=font_path).get_name()
-plt.rcParams["font.family"] = font_name
+font_prop = fm.FontProperties(fname=font_path)
+fm.fontManager.addfont(font_path)
+plt.rc('font', family=font_prop.get_name())
 plt.rcParams["axes.unicode_minus"] = False
 
-# 관리자 이메일 목록
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
 def is_admin():
