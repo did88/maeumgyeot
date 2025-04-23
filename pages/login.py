@@ -44,9 +44,9 @@ with st.form("signup_form"):
     email_signup = st.text_input("이메일", key="signup_email", autocomplete="email")
     password_signup = st.text_input("비밀번호", type="password", key="signup_pw", autocomplete="new-password")
     password_confirm = st.text_input("비밀번호 확인", type="password", key="signup_confirm", autocomplete="new-password")
-
     
-with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
+    
+    with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동의서 보기"):
     components.html("""
     <div style="border:1px solid #ccc; padding:10px; height:300px; overflow-y:scroll;" id="terms_box"
          onscroll="checkScroll()">
@@ -94,7 +94,7 @@ with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동�
     }
     </script>
     """, height=380)
-
+    
 agree = st.checkbox("⬆️ 약관 내용을 모두 읽고 동의합니다.", key="terms_agree_manual")
     signup_submit = st.form_submit_button("회원가입")
 
