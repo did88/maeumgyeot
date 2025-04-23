@@ -65,7 +65,10 @@ def get_emotion_codes(text):
             max_tokens=100
         )
         content = response["choices"][0]["message"]["content"]
-        st.code(f"[GPT 응답 원문]\n{content}", language="text")
+
+        # 💬 화면에 GPT 응답 원문 출력
+        st.subheader("📄 GPT 응답 원문 (디버그)")
+        st.code(content, language="text")
 
         start = content.find("[")
         end = content.find("]") + 1
