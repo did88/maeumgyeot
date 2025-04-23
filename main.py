@@ -1,3 +1,4 @@
+
 import streamlit as st
 import datetime
 import firebase_admin
@@ -5,13 +6,11 @@ from firebase_admin import credentials, firestore
 from openai import OpenAI
 from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
-# 관리자 이메일 리스트
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
 st.set_page_config(page_title="🫂 마음곁 홈", layout="centered")
 st.title("🫂 마음곁")
 
-# 로그인 확인
 if "user" not in st.session_state:
     st.warning("로그인이 필요합니다. 좌측 메뉴에서 로그인해주세요.")
     st.stop()
@@ -20,7 +19,6 @@ user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
 
-# 🔧 사이드바 메뉴
 st.sidebar.success(f"환영합니다, {email}님")
 st.sidebar.page_link("main.py", label="🏠 홈")
 st.sidebar.page_link("pages/6_MyPage.py", label="📈 내 감정 대시보드")
@@ -38,17 +36,15 @@ if st.sidebar.button("🚪 로그아웃"):
     del st.session_state.user
     st.rerun()
 
-# Firebase 초기화
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
-    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\\n")
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
     cred = credentials.Certificate(firebase_config)
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# 위로 문구 사전
 comfort_phrases = {
     "기쁨": "😊 기쁨은 소중한 에너지예요.",
     "슬픔": "😢 슬플 땐 충분히 울어도 괜찮아요.",
@@ -62,7 +58,6 @@ comfort_phrases = {
     "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
 
-# GPT 위로 메시지 생성
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="gpt-4",
@@ -73,11 +68,9 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
-# 감정 코드 자동 태깅 (하이브리드 + 방어 로직 포함)
 def generate_emotion_codes(text):
     return get_emotion_codes_combined(text)
 
-# 감정 저장
 def save_emotion(uid, text_input, gpt_response, emotion_codes):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
@@ -86,7 +79,6 @@ def save_emotion(uid, text_input, gpt_response, emotion_codes):
         "timestamp": datetime.datetime.now()
     })
 
-# 📝 감정 입력 UI
 st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
@@ -98,12 +90,15 @@ if st.button("💌 감정 보내기"):
             save_emotion(uid, text_input, gpt_response, emotion_codes)
 
             st.markdown("#### 💬 GPT의 위로")
-            top_code = emotion_codes[0] if emotion_codes else "unspecified"
-            comfort = comfort_phrases.get(top_code, comfort_phrases["unspecified"])
+            if emotion_codes:
+                comfort_lines = [f"💡 {comfort_phrases.get(code, '표현해줘서 고마워요.')}" for code in emotion_codes]
+                comfort = "<br>".join(comfort_lines)
+            else:
+                comfort = comfort_phrases["unspecified"]
 
             st.markdown(
                 f"<div style='background-color:#f0f8ff; padding:15px; border-radius:10px; border:1px solid #dbeafe;'>{gpt_response}"
-                f"<br><br><span style='color:#666;'>💡 {comfort}</span></div>",
+                f"<br><br><span style='color:#666;'>{comfort}</span></div>",
                 unsafe_allow_html=True
             )
             st.markdown(f"🔖 **감정 코드:** `{', '.join(emotion_codes)}`")
@@ -111,7 +106,6 @@ if st.button("💌 감정 보내기"):
     else:
         st.warning("감정을 입력해주세요.")
 
-# 📜 감정 히스토리 출력
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("### 📜 내 감정 히스토리")
 
