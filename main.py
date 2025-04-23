@@ -5,26 +5,26 @@ from firebase_admin import credentials, firestore
 from openai import OpenAI
 from utils.gpt_emotion_tagging import get_emotion_codes_combined
 
-# ✅ 페이지 설정 (사이드바 표시용 제목)
+# ✅ 페이지 설정
 st.set_page_config(page_title="홈", layout="centered")
 
 # ✅ 사이드바 메뉴 수동 구성
 with st.sidebar:
     st.markdown("## 📋 메뉴")
     st.page_link("main.py", label="🏠 홈")
-    st.page_link("pages/History.py", label="📜 감정 히스토리")
-    st.page_link("pages/Dream Analysis.py", label="🌙 꿈 해석")
-    st.page_link("pages/SelfCritic Detector.py", label="⚠️ 자기비판 탐지기")
-    st.page_link("pages/Feedback.py", label="💬 사용자 피드백")
-    st.page_link("pages/MyPage.py", label="🙋‍♂️ 내 정보")
+    st.page_link("pages/1_History.py", label="📜 감정 히스토리")
+    st.page_link("pages/2_Admin.py", label="🔐 관리자 페이지")
+    st.page_link("pages/3_Feedback.py", label="💬 사용자 피드백")
+    st.page_link("pages/4_Dream_Analysis.py", label="🌙 꿈 해석")
+    st.page_link("pages/5_SelfCritic_Detector.py", label="⚠️ 자기비판 탐지기")
+    st.page_link("pages/6_MyPage.py", label="🙋‍♂️ 내 정보")
     st.page_link("pages/login.py", label="🔑 로그인")
     st.page_link("pages/privacy.py", label="📜 개인정보 처리방침")
     st.page_link("pages/terms.py", label="📄 이용약관")
 
-# ✅ 로그인 안 된 경우: 환영 메시지
+# ✅ 로그인 확인
 if not st.session_state.get("user"):
     st.markdown("<h1 style='display: flex; align-items: center; gap: 10px;'>🤗 마음곁</h1>", unsafe_allow_html=True)
-
     st.info("""
     ### 👋 환영합니다!
     **마음곁**은 감정을 기록하고 위로를 받을 수 있는 심리 지원 앱입니다.  
@@ -35,7 +35,7 @@ if not st.session_state.get("user"):
     """)
     st.stop()
 
-# ✅ 로그인 된 사용자 정보
+# ✅ 로그인된 사용자 정보
 user = st.session_state.user
 email = user["email"]
 uid = user["uid"]
