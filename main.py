@@ -8,8 +8,9 @@ from utils.gpt_emotion_tagging import get_emotion_codes_combined
 # 관리자 이메일
 ADMIN_EMAILS = ["wsryang@gmail.com"]
 
-# ✅ 페이지 설정 (사이드바에 '홈'으로 표시)
-st.set_page_config(page_title="홈", layout="centered")
+# 페이지 설정
+st.set_page_config(page_title="🫂 마음곁 홈", layout="centered")
+# st.title("🫂 마음곁")
 
 # 로그인 안 된 경우: 환영 메시지
 if not st.session_state.get("user"):
