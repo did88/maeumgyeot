@@ -19,6 +19,14 @@ if not is_admin():
 
 st.title("📊 관리자 전용 페이지")
 
+if not firebase_admin._apps:
+    firebase_config = dict(st.secrets["firebase"])
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
+    cred = credentials.Certificate(firebase_config)
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+
 # 🔀 탭 선택
 tab = st.radio("🔎 보고 싶은 항목을 선택하세요", ["감정 통계", "사용자별 감정 흐름", "사용자 피드백"])
 
@@ -59,7 +67,6 @@ if not firebase_admin._apps:
         st.error(f"Firebase 인증 실패: {e}")
         st.stop()
 
-db = firestore.client()
 
 # 📋 모든 사용자 감정 기록
 st.subheader("📋 모든 감정 기록")
