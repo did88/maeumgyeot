@@ -35,7 +35,7 @@ AI는 당신의 감정을 잊지 않습니다. 그리고 언젠가, 당신보다
 
 ## 🚀 사용법
 
-1. [앱 링크 바로가기](https://your-app-link.com) *(인증된 사용자만 접근 가능)*
+1. [앱 링크 바로가기](https://maeumgyeot-ldvtf6f3bdvjpngksyitdw.streamlit.app/) *(인증된 사용자만 접근 가능)*
 2. Google 로그인 후 감정 입력
 3. GPT 기반 위로 메시지와 감정 분석 결과 확인
 4. ‘내 감정 히스토리’에서 누적 기록 열람 및 시각화 확인
