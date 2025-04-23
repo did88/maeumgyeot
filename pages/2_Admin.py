@@ -5,9 +5,10 @@ from firebase_admin import credentials, firestore
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+import os
 
-# ✅ NanumGothic 사용자 폰트 설정
-font_path = "../assets/fonts/NanumGothic.ttf"
+# ✅ 절대 경로 기반 폰트 설정
+font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "NanumGothic.ttf"))
 font_name = fm.FontProperties(fname=font_path).get_name()
 plt.rcParams["font.family"] = font_name
 plt.rcParams["axes.unicode_minus"] = False
