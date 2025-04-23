@@ -94,6 +94,7 @@ with st.expander("📜 이용약관 및 개인정보 수집·이용·분석 동�
     }
     </script>
     """, height=380)
+
 agree = st.checkbox("⬆️ 약관 내용을 모두 읽고 동의합니다.", key="terms_agree_manual")
     signup_submit = st.form_submit_button("회원가입")
 
