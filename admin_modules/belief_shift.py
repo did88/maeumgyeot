@@ -1,9 +1,21 @@
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
 from utils.font_config import set_korean_font
 
+
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import os
+
+# 직접 한글 폰트 경로 설정
+font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "NanumGothic.ttf"))
+if os.path.exists(font_path):
+    font_prop = fm.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+    plt.rcParams['axes.unicode_minus'] = False
 def run(db):
     set_korean_font()
     st.subheader("📉 고정관념 변화 시계열 분석")
