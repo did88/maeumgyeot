@@ -4,8 +4,6 @@ from firebase_admin import credentials, firestore
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
-
-# ✅ admin_modules 내부 모듈 import
 from admin_modules import (
     emotion_trends,
     combo_emotion,
@@ -38,8 +36,7 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# 🔀 탭 선택
-
+# 🔀 탭 선택 (모든 기능 포함)
 tab = st.radio("🔎 보고 싶은 항목을 선택하세요", [
     "감정 통계",
     "복합 감정 분석",
