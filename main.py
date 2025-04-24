@@ -1,5 +1,7 @@
 import streamlit as st
 import datetime
+import re
+import emoji
 import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
@@ -32,7 +34,7 @@ uid = user["uid"]
 
 # ✅ Firebase 초기화
 if not firebase_admin._apps:
-    firebase_config = dict(st.st.secrets["firebase"])
+    firebase_config = dict(st.secrets["firebase"])
     firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
     try:
         cred = credentials.Certificate(firebase_config)
@@ -45,7 +47,7 @@ if not firebase_admin._apps:
 db = firestore.client()
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# ✅ 감정 코드별 위로 문구
+# ✅ 위로 문구
 comfort_phrases = {
     "기쁨": "😊 기쁨은 소중한 에너지예요.",
     "슬픔": "😢 슬플 땐 충분히 울어도 괜찮아요.",
@@ -58,6 +60,28 @@ comfort_phrases = {
     "후회/자기비판": "💭 너무 자신을 몰아붙이지 말아요.",
     "unspecified": "💡 어떤 감정이든 소중해요. 표현해줘서 고마워요."
 }
+
+# ✅ 유효성 검사 함수
+def is_valid_text(text):
+    BAD_WORDS = ["씨발", "ㅅㅂ", "ㅂㅅ", "병신", "좆", "꺼져", "fuck", "shit", "asshole", "fucker"]
+    text = text.strip()
+    if len(text) < 10:
+        return False
+    if re.search(r'(\w)\1{3,}', text):
+        return False
+    words = text.split()
+    if len(words) >= 3 and all(w == words[0] for w in words):
+        return False
+    if all(char in 'ㅋㅎㄷㅠ' for char in text):
+        return False
+    if emoji.emoji_count(text) > 0 and len(emoji.replace_emoji(text, replace='')) == 0:
+        return False
+    lowered = text.lower()
+    if any(bad_word in lowered for bad_word in BAD_WORDS):
+        return False
+    if not re.sub(r'[\n\r]', '', text).strip():
+        return False
+    return True
 
 # ✅ GPT 응답 생성
 def generate_response(prompt):
@@ -100,7 +124,9 @@ st.markdown("### 오늘의 감정을 입력해보세요 ✍️")
 text_input = st.text_area("당신의 감정을 자유롭게 적어주세요")
 
 if st.button("💌 감정 보내기"):
-    if text_input.strip():
+    if not is_valid_text(text_input):
+        st.warning("⚠️ 감정은 최소 10자 이상, 의미 있는 문장으로 작성해주세요. 반복 단어나 이모지/욕설은 등록되지 않아요.")
+    else:
         with st.spinner("감정을 분석하고 있어요..."):
             gpt_response = generate_response(text_input)
             emotion_codes = generate_emotion_codes(text_input)
@@ -110,22 +136,18 @@ if st.button("💌 감정 보내기"):
 
             save_emotion(uid, text_input, gpt_response, emotion_codes, thinking_traps, wakeup_question)
 
-            # ✅ 고정관념 감지 출력
             if thinking_traps:
                 st.markdown("### 🧠 감지된 고정관념")
                 for trap in thinking_traps:
                     st.markdown(f"- **{trap}**")
-
                 st.markdown("### 💬 마음을 여는 피드백")
                 for fb in trap_result["피드백"]:
                     st.markdown(f"> {fb}")
 
-            # ✅ 마음깨기 질문 출력
             if wakeup_question:
                 st.markdown("### 🔍 마음 깨기 질문")
                 st.markdown(f"> 💡 {wakeup_question}")
 
-            # ✅ GPT 위로 출력
             st.markdown("#### 💬 GPT의 위로")
             if emotion_codes:
                 comfort_lines = [f"💡 {comfort_phrases.get(code, '표현해줘서 고마워요.')}" for code in emotion_codes]
@@ -140,8 +162,6 @@ if st.button("💌 감정 보내기"):
             )
             st.markdown(f"🔖 **감정 코드:** `{', '.join(emotion_codes)}`")
             st.text(f"🧪 DEBUG 감정 코드: {emotion_codes}")
-    else:
-        st.warning("감정을 입력해주세요.")
 
 # ✅ 감정 히스토리 출력
 st.markdown("<hr>", unsafe_allow_html=True)
