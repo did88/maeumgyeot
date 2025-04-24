@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from utils.font_config import set_korean_font
 
 def run(db):
+    set_korean_font()
     st.subheader("🧩 자기비판 분석")
 
     docs = db.collection_group("emotions").stream()
@@ -25,13 +27,10 @@ def run(db):
 
     df = pd.DataFrame(data)
 
-    # 자기비판 여부에 따른 감정 분포
     st.subheader("📊 자기비판 여부에 따른 감정 코드 분포")
     emotion_dist = df.groupby(["자기비판", "감정"]).size().unstack().fillna(0)
-
     st.bar_chart(emotion_dist.T)
 
-    # 일자별 자기비판 빈도
     st.subheader("📈 자기비판 발생 시계열")
     df_daily = df[df["자기비판"] == True].groupby("날짜").size()
 

@@ -4,8 +4,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import Counter
 from itertools import combinations
+from utils.font_config import set_korean_font  # ✅ 추가
 
 def run(db):
+    set_korean_font()  # ✅ 한글 폰트 설정
+
     st.subheader("💥 복합 감정 조합 분석")
 
     emotion_data = db.collection_group("emotions").stream()
@@ -27,7 +30,6 @@ def run(db):
 
     st.dataframe(df.head(10), use_container_width=True)
 
-    # Heatmap용 매트릭스 생성
     emotion_set = sorted(set(e for pair in combo_counter for e in pair))
     matrix = pd.DataFrame(0, index=emotion_set, columns=emotion_set)
 

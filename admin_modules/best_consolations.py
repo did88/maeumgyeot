@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+from utils.font_config import set_korean_font
 
 def run(db):
+    set_korean_font()
     st.subheader("🎁 GPT 위로 문구 효과 분석")
 
     docs = db.collection_group("emotions").stream()

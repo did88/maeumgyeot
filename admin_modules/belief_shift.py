@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
+from utils.font_config import set_korean_font
 
 def run(db):
+    set_korean_font()
     st.subheader("📉 고정관념 변화 시계열 분석")
 
     trap_counter = Counter()
