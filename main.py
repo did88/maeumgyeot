@@ -32,7 +32,7 @@ uid = user["uid"]
 
 # ✅ Firebase 초기화
 if not firebase_admin._apps:
-    firebase_config = dict(st.secrets["firebase"])
+    firebase_config = dict(st.st.secrets["firebase"])
     firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
     try:
         cred = credentials.Certificate(firebase_config)
@@ -70,16 +70,28 @@ def generate_response(prompt):
     )
     return response.choices[0].message.content
 
+# ✅ 마음 깨기 질문 생성
+def generate_wakeup_question(text, traps):
+    joined_traps = ", ".join(traps)
+    system_msg = f"너는 사용자의 사고방식을 확장시키는 심리 코치야. 사용자의 입력: {text}\n감지된 고정관념: {joined_traps}\n이 사람에게 사고를 전환할 수 있는 깊은 질문을 하나만 던져줘."
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": system_msg}]
+    )
+    return response.choices[0].message.content
+
 # ✅ 감정 코드 태깅
 def generate_emotion_codes(text):
     return get_emotion_codes_combined(text)
 
 # ✅ 감정 저장
-def save_emotion(uid, text_input, gpt_response, emotion_codes):
+def save_emotion(uid, text_input, gpt_response, emotion_codes, thinking_traps=None, wakeup_question=None):
     db.collection("users").document(uid).collection("emotions").add({
         "input_text": text_input,
         "emotion_codes": emotion_codes,
         "gpt_response": gpt_response,
+        "thinking_traps": thinking_traps or [],
+        "wakeup_question": wakeup_question,
         "timestamp": datetime.datetime.now()
     })
 
@@ -92,22 +104,28 @@ if st.button("💌 감정 보내기"):
         with st.spinner("감정을 분석하고 있어요..."):
             gpt_response = generate_response(text_input)
             emotion_codes = generate_emotion_codes(text_input)
-            save_emotion(uid, text_input, gpt_response, emotion_codes)
-
-            # ✅ 고정관념 감지
             trap_result = detect_thinking_traps(text_input)
-            if trap_result["고정관념"]:
+            thinking_traps = trap_result["고정관념"]
+            wakeup_question = generate_wakeup_question(text_input, thinking_traps) if thinking_traps else None
+
+            save_emotion(uid, text_input, gpt_response, emotion_codes, thinking_traps, wakeup_question)
+
+            # ✅ 고정관념 감지 출력
+            if thinking_traps:
                 st.markdown("### 🧠 감지된 고정관념")
-                for trap in trap_result["고정관념"]:
+                for trap in thinking_traps:
                     st.markdown(f"- **{trap}**")
 
                 st.markdown("### 💬 마음을 여는 피드백")
                 for fb in trap_result["피드백"]:
                     st.markdown(f"> {fb}")
-            else:
-                st.success("🎉 왜곡된 사고 없이 건강한 감정 흐름이에요!")
 
-            # ✅ GPT 위로
+            # ✅ 마음깨기 질문 출력
+            if wakeup_question:
+                st.markdown("### 🔍 마음 깨기 질문")
+                st.markdown(f"> 💡 {wakeup_question}")
+
+            # ✅ GPT 위로 출력
             st.markdown("#### 💬 GPT의 위로")
             if emotion_codes:
                 comfort_lines = [f"💡 {comfort_phrases.get(code, '표현해줘서 고마워요.')}" for code in emotion_codes]
@@ -141,11 +159,15 @@ for doc in docs:
     d = doc.to_dict()
     ts = d["timestamp"].strftime("%Y-%m-%d %H:%M")
     codes = ", ".join(d.get("emotion_codes", ["unspecified"]))
+    traps = ", ".join(d.get("thinking_traps", []))
+    question = d.get("wakeup_question")
     st.markdown(
         f"<div style='border:1px solid #ddd; padding:15px; margin-bottom:15px; border-radius:10px; background:#fff9;'>"
         f"🗓️ <b>{ts}</b><br>"
         f"<b>📝 감정:</b> {d['input_text']}<br>"
         f"<b>🏷️ 감정 코드:</b> {codes}<br>"
+        f"<b>🧠 고정관념:</b> {traps}<br>"
+        f"<b>🧩 마음 깨기 질문:</b> {question if question else '-'}<br>"
         f"<b>🤖 GPT의 위로:</b> {d['gpt_response']}</div>",
         unsafe_allow_html=True
     )
