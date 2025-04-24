@@ -4,6 +4,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from openai import OpenAI
 from utils.gpt_emotion_tagging import get_emotion_codes_combined
+from utils.thinking_trap import detect_thinking_traps  # ✅ 고정관념 감지 추가
 
 # ✅ 관리자 이메일 (필요 시 사용)
 ADMIN_EMAILS = ["wsryang@gmail.com"]
@@ -93,6 +94,20 @@ if st.button("💌 감정 보내기"):
             emotion_codes = generate_emotion_codes(text_input)
             save_emotion(uid, text_input, gpt_response, emotion_codes)
 
+            # ✅ 고정관념 감지
+            trap_result = detect_thinking_traps(text_input)
+            if trap_result["고정관념"]:
+                st.markdown("### 🧠 감지된 고정관념")
+                for trap in trap_result["고정관념"]:
+                    st.markdown(f"- **{trap}**")
+
+                st.markdown("### 💬 마음을 여는 피드백")
+                for fb in trap_result["피드백"]:
+                    st.markdown(f"> {fb}")
+            else:
+                st.success("🎉 왜곡된 사고 없이 건강한 감정 흐름이에요!")
+
+            # ✅ GPT 위로
             st.markdown("#### 💬 GPT의 위로")
             if emotion_codes:
                 comfort_lines = [f"💡 {comfort_phrases.get(code, '표현해줘서 고마워요.')}" for code in emotion_codes]
