@@ -8,7 +8,9 @@ FIREBASE_API_KEY = st.secrets["firebase_web"]["apiKey"]
 
 # Firebase Admin SDK 초기화
 if not firebase_admin._apps:
-    cred = credentials.Certificate(st.secrets["firebase"])
+    firebase_config = dict(st.secrets["firebase"])
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+    cred = credentials.Certificate(firebase_config)
     firebase_admin.initialize_app(cred)
 
 st.set_page_config(page_title="🔐 로그인", layout="centered")
@@ -52,34 +54,34 @@ with st.form("signup_form"):
             <p><strong>제1조 (목적)</strong><br>
             본 약관은 사용자가 본 심리 챗봇 서비스를 이용함에 있어 필요한 권리, 의무 및 책임사항을 규정함을 목적으로 하며, 본 서비스는 사용자의 감정, 사고, 행동, 신체상태에 관한 입력값을 바탕으로 GPT API 기반 위로 응답, 감정 태깅, 감정 추이 분석 등 심리 지원 기능을 제공합니다.</p>
             <p><strong>제2조 (정의)</strong><br>
-            “서비스”란 사용자 감정 기록 기반 챗봇 인터페이스, 감정분석, 위로 응답, 주간 감정 리포트 제공 등을 포함한 일체의 활동을 의미합니다.<br>
-            “개인정보”란 성명, 이메일, 계정정보, IP주소 등 개인을 식별할 수 있는 정보를 의미합니다.<br>
-            “민감정보”란 감정 상태, 심리적 고충, 정신건강 관련 자기 보고 내용, 꿈 기록, 자기비판 진술 등 심리적 특성을 포함하는 정보를 말합니다.<br>
-            “처리”란 개인정보의 수집, 저장, 조회, 분석, 제공, 삭제 등 일체의 행위를 의미합니다.</p>
-            <p><strong>제3조 (개인정보 및 민감정보의 수집 항목)</strong><br>
-            1. 일반 정보: 이메일 주소, 로그인 정보, Firebase UID, 사용 기기 정보 등<br>
-            2. 심리 정보(민감정보): 사용자 입력 감정 및 사고, GPT 기반 분석 결과, 꿈/자기비판 등 자가보고 콘텐츠, 챗봇과의 전체 대화 로그<br>
-            3. 기타 정보: 접속 일시, 사용 빈도, 활동 기록 등</p>
-            <p><strong>제4조 (수집 및 이용 목적)</strong><br>
-            맞춤형 GPT 응답 제공, 감정 변화 시계열 분석, 콘텐츠 및 조언 제공, 서비스 품질 개선, 익명 통계 연구, 관련 법령 준수</p>
-            <p><strong>제5조 (정보의 저장 및 보안)</strong><br>
-            Firebase 기반 보안환경, Google Cloud 보안 표준, 민감정보 암호화 저장 및 최소 접근, 사용자 요청 시 완전 삭제</p>
-            <p><strong>제6조 (정보의 보유 및 이용 기간)</strong><br>
-            탈퇴 또는 목적 달성 시까지 보관. 익명화된 데이터는 연구/통계 목적 보유 가능</p>
-            <p><strong>제7조 (동의 거부권 및 불이익)</strong><br>
-            수집 동의 거부 가능, 단 일부 서비스 제한 가능</p>
-            <p><strong>제8조 (타인 정보 입력 금지)</strong><br>
-            본인 외 타인 심리정보 입력 및 도용 금지, 법적 책임 있음</p>
-            <p><strong>제9조 (GPT API 응답의 성격)</strong><br>
-            전문 상담이 아닌 위로 및 자기탐색 도구, 판단 기준 아님</p>
-            <p><strong>제10조 (서비스 제공자의 책임 제한)</strong><br>
-            사용자의 해석 또는 활용에 따른 피해에 법적 책임 없음. 단, 명백한 과실 시 책임</p>
-            <p><strong>제11조 (미성년자 보호)</strong><br>
-            만 14세 미만 사용불가, 만 18세 미만은 보호자 동의 필요</p>
-            <p><strong>제12조 (동의의 철회 및 열람·정정 요청)</strong><br>
-            열람, 수정, 삭제, 수집 거부 등 요청 가능</p>
-            <p><strong>제13조 (약관 변경)</strong><br>
-            법령 변경 등 사전 고지 후 변경 가능</p>
+“서비스”란 사용자 감정 기록 기반 챗봇 인터페이스, 감정분석, 위로 응답, 주간 감정 리포트 제공 등을 포함한 일체의 활동을 의미합니다.<br>
+“개인정보”란 성명, 이메일, 계정정보, IP주소 등 개인을 식별할 수 있는 정보를 의미합니다.<br>
+“민감정보”란 감정 상태, 심리적 고충, 정신건강 관련 자기 보고 내용, 꿈 기록, 자기비판 진술 등 심리적 특성을 포함하는 정보를 말합니다.<br>
+“처리”란 개인정보의 수집, 저장, 조회, 분석, 제공, 삭제 등 일체의 행위를 의미합니다.</p>
+<p><strong>제3조 (개인정보 및 민감정보의 수집 항목)</strong><br>
+1. 일반 정보: 이메일 주소, 로그인 정보, Firebase UID, 사용 기기 정보 등<br>
+2. 심리 정보(민감정보): 사용자 입력 감정 및 사고, GPT 기반 분석 결과, 꿈/자기비판 등 자가보고 콘텐츠, 챗봇과의 전체 대화 로그<br>
+3. 기타 정보: 접속 일시, 사용 빈도, 활동 기록 등</p>
+<p><strong>제4조 (수집 및 이용 목적)</strong><br>
+맞춤형 GPT 응답 제공, 감정 변화 시계열 분석, 콘텐츠 및 조언 제공, 서비스 품질 개선, 익명 통계 연구, 관련 법령 준수</p>
+<p><strong>제5조 (정보의 저장 및 보안)</strong><br>
+Firebase 기반 보안환경, Google Cloud 보안 표준, 민감정보 암호화 저장 및 최소 접근, 사용자 요청 시 완전 삭제</p>
+<p><strong>제6조 (정보의 보유 및 이용 기간)</strong><br>
+탈퇴 또는 목적 달성 시까지 보관. 익명화된 데이터는 연구/통계 목적 보유 가능</p>
+<p><strong>제7조 (동의 거부권 및 불이익)</strong><br>
+수집 동의 거부 가능, 단 일부 서비스 제한 가능</p>
+<p><strong>제8조 (타인 정보 입력 금지)</strong><br>
+본인 외 타인 심리정보 입력 및 도용 금지, 법적 책임 있음</p>
+<p><strong>제9조 (GPT API 응답의 성격)</strong><br>
+전문 상담이 아닌 위로 및 자기탐색 도구, 판단 기준 아님</p>
+<p><strong>제10조 (서비스 제공자의 책임 제한)</strong><br>
+사용자의 해석 또는 활용에 따른 피해에 법적 책임 없음. 단, 명백한 과실 시 책임</p>
+<p><strong>제11조 (미성년자 보호)</strong><br>
+만 14세 미만 사용불가, 만 18세 미만은 보호자 동의 필요</p>
+<p><strong>제12조 (동의의 철회 및 열람·정정 요청)</strong><br>
+열람, 수정, 삭제, 수집 거부 등 요청 가능</p>
+<p><strong>제13조 (약관 변경)</strong><br>
+법령 변경 등 사전 고지 후 변경 가능</p>
         </div>
         <p id="scroll_hint" style="color:red;">※ 약관을 끝까지 읽어야 아래 체크박스를 누를 수 있습니다.</p>
         <script>
@@ -193,7 +195,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ✅ Google 로그인 토큰 처리
-params = st.query_params  # 최신 API 사용
+params = st.query_params
 if "id_token" in params:
     try:
         decoded = auth.verify_id_token(params["id_token"][0])
