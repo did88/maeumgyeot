@@ -6,14 +6,14 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import os
 
-# 폰트 설정
+# 🔤 폰트 설정
 font_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "fonts", "NanumGothic.ttf"))
 font_prop = fm.FontProperties(fname=font_path)
 fm.fontManager.addfont(font_path)
 plt.rc('font', family=font_prop.get_name())
 plt.rcParams["axes.unicode_minus"] = False
 
-# 감정 코드 한글 매핑
+# 💡 감정 코드 한글 매핑
 EMOTION_TRANSLATE = {
     "joy": "기쁨",
     "sadness": "슬픔",
@@ -27,15 +27,20 @@ EMOTION_TRANSLATE = {
     "unspecified": None
 }
 
-# Firebase 초기화
+# 🔐 Firebase 초기화
 if not firebase_admin._apps:
     firebase_config = dict(st.secrets["firebase"])
-    firebase_config["private_key"] = firebase_config["private_key"].replace("\n", "\n")
-    cred = credentials.Certificate(firebase_config)
-    firebase_admin.initialize_app(cred)
+    firebase_config["private_key"] = firebase_config["private_key"].replace("\\n", "\n")
+    try:
+        cred = credentials.Certificate(firebase_config)
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        st.error(f"🔥 Firebase 초기화 실패: {e}")
+        st.stop()
 
 db = firestore.client()
 
+# ✅ Streamlit UI 구성
 st.set_page_config(page_title="감정 히스토리", layout="centered")
 st.title("📜 내 감정 히스토리")
 st.subheader("📈 감정 흐름 라인 차트")
@@ -46,6 +51,7 @@ if "user" not in st.session_state:
 
 uid = st.session_state.user["uid"]
 
+# 🔍 Firestore에서 감정 기록 조회
 docs = (
     db.collection("users")
     .document(uid)
@@ -64,6 +70,7 @@ for doc in docs:
         if translated:
             records.append({"날짜": date, "감정": translated})
 
+# 📊 시각화
 if not records:
     st.info("아직 감정 기록이 없습니다.")
 else:
