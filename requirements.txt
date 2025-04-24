@@ -7,3 +7,4 @@ matplotlib
 pytz
 xlsxwriter
 emoji
+seaborn
